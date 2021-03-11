@@ -1,2 +1,2 @@
 # migration_scripts
-Scripts for migration onto AWS in early 2021
+General migration scripts

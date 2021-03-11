@@ -60,3 +60,13 @@ for dataset_id in dataset_ids:
     print(unique_species)
     print()
     print()
+
+
+    # TODO
+    """"
+    - check if the dataset exists in laminar-dump
+    - create a pipeline-spec.yaml
+    - generate datapackage
+    - add unique lat lon pair to base of DP with bcodmo: key
+    - add all unique species into the specific field within the schema, still with key bcodmo:
+
