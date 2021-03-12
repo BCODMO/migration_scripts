@@ -1,11 +1,29 @@
+import logging
+
+logging.getLogger("requests").setLevel(logging.WARNING)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
 import pandas as pd
 import requests
+import yaml
+from dataflows import Flow
+from datapackage_pipelines.lib import update_resource
+from bcodmo_frictionless.bcodmo_pipeline_processors import (
+    load,
+    update_fields,
+    add_schema_metadata,
+    dump_to_s3,
+)
 
 dataset_ids = ["3300", "2292"]
 
 
-def download_data(dataset_id):
+def generate_data_url(dataset_id):
     url = f"https://www.bco-dmo.org/dataset/{dataset_id}/data/download"
+    return url
+
+
+def download_data(dataset_id):
+    url = generate_data_url(dataset_id)
     return pd.read_csv(url, sep="\t", comment="#")
 
 
@@ -44,29 +62,111 @@ def get_unique_species(df, species):
     return_list = []
     for s in species:
         assert s in df
-        return_list.append(list(df[s].unique()))
+        return_list.append(df[s].unique().tolist())
 
     return return_list
 
 
-for dataset_id in dataset_ids:
-    df = download_data(dataset_id)
-    lat, lon = get_latlon_fields(dataset_id)
-    species = get_species_fields(dataset_id)
-    unique_species = get_unique_species(df, species)
-    print(df)
-    print(lat, lon)
-    print(species)
-    print(unique_species)
-    print()
-    print()
+def _get_pipeline_spec(
+    title, description, dataset_id, dataset_version, version, steps,
+):
+    yaml_string = yaml.dump(
+        {
+            title: {
+                "title": title,
+                "description": description,
+                "datasetId": dataset_id,
+                "datasetVersion": dataset_version,
+                "version": version,
+                "pipeline": steps,
+            }
+        },
+        sort_keys=False,
+    )
+    return yaml_string
 
+
+processor_to_func = {
+    # bcodmo processors
+    "bcodmo_pipeline_processors.load": load,
+    "bcodmo_pipeline_processors.update_fields": update_fields,
+    "bcodmo_pipeline_processors.add_schema_metadata": add_schema_metadata,
+    "bcodmo_pipeline_processors.dump_to_s3": dump_to_s3,
+    "update_resource": update_resource.flow,
+}
+
+for dataset_id in dataset_ids:
+
+    lat, lon = get_latlon_fields(dataset_id)
+    assert (lat and lon) or not (lat and lon)
+    species = get_species_fields(dataset_id)
+    unique_species = []
+    if len(species):
+        df = download_data(dataset_id)
+        unique_species = get_unique_species(df, species)
+
+    url = generate_data_url(dataset_id)
+    steps = [
+        {
+            "run": "bcodmo_pipeline_processors.load",
+            "parameters": {
+                "from": url,
+                "name": "res1",
+                "format": "csv",
+                "skip_rows": ["#"],
+                "delimiter": "\t",
+                "infer_strategy": "full",
+                "cast_strategy": "schema",
+                "override_schema": {"missingValues": ["", "nd"],},
+            },
+        }
+    ]
+
+    # Add the unique species list to each species column
+    processor_fields = {}
+    for i, col_name in enumerate(species):
+        processor_fields[col_name] = {"bcodmo:": {"unique": unique_species[i],}}
+    if len(processor_fields.keys()):
+        steps.append(
+            {
+                "run": "bcodmo_pipeline_processors.update_fields",
+                "parameters": {"resources": ["res1"], "fields": processor_fields},
+            }
+        )
+
+    # Add lat lon to the base of the resource
+    if lat and lon:
+        steps.append(
+            {
+                "run": "update_resource",
+                "parameters": {
+                    "resources": ["res1"],
+                    "metadata": {"bcodmo:": {"lat_column": lat, "lon_column": lon}},
+                },
+            }
+        )
+
+    # Generate the pipeline spec to get added into the dump to s3 step
+    dataset_version = ""
+    title = "title"
+    pipeline_spec_str = _get_pipeline_spec(
+        title, "", dataset_id, dataset_version, "v2.10.0", steps
+    )
+
+    print(pipeline_spec_str)
+
+    flow_params = []
+    for step in steps:
+        processor = processor_to_func[step["run"]]
+        flow_params.append(processor(step["parameters"]))
+
+    r = Flow(*flow_params,).process()
+    print(r[0].descriptor)
+    print()
+    print()
 
     # TODO
     """"
-    - check if the dataset exists in laminar-dump
-    - create a pipeline-spec.yaml
-    - generate datapackage
-    - add unique lat lon pair to base of DP with bcodmo: key
-    - add all unique species into the specific field within the schema, still with key bcodmo:
-
+    - check if a dataset with a pipeline-spec & datapackage exists in laminar-dump/whoi server
+    - create a dump_to_s3 step
+    """
