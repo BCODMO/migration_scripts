@@ -35,6 +35,10 @@ DATASETS_FILENAME = "datasets.csv"
 SPECIES_FILENAME = "species.json"
 # the result of a sparql query getting all of the lat lon columns
 LATLON_FILENAME = "latlon.json"
+# the result of a big "find" command that finds all pipeline-spec names in data302/data305
+# find /data30* | grep pipeline-spec.yaml
+PIPELINE_SPECS_FILENAME = "pipelines.txt"
+
 # Whether the dump to s3 step should be used
 ADD_DUMP = False
 # Whether the list of dataset_ids should be used instead of all datasets
@@ -67,6 +71,14 @@ with open(LATLON_FILENAME, "r") as json_file:
     ]
     latlon_dict = {extract_dataset_id(s["dataset"]): s for s in latlon_list}
 
+with open(PIPELINE_SPECS_FILENAME, "r") as fp:
+    pipeline_specs_list = []
+    for line in fp:
+        line = line.strip("\n\r")
+        if not line.endswith("pipeline-spec.yaml"):
+            continue
+        pipeline_specs_list.append(line)
+
 
 def generate_data_url(dataset_id):
     url = f"https://www.bco-dmo.org/dataset/{dataset_id}/data/download"
@@ -75,6 +87,20 @@ def generate_data_url(dataset_id):
 
 def download_data(url):
     return pd.read_csv(url, sep="\t", comment="#")
+
+
+def find_pipeline_spec_match(dataset_id, dataset_version):
+    matches = []
+    for path in pipeline_specs_list:
+        search_string = f"/{dataset_id}/{dataset_version}/data/pipeline-spec.yaml"
+        if search_string in path and "/working/" not in path and "/work/" not in path:
+            matches.append(path)
+
+    assert len(matches) <= 1
+
+    if len(matches) == 1:
+        return matches[0]
+    return None
 
 
 def get_latlon_fields(dataset_id):
@@ -255,7 +281,7 @@ for dataset in datasets:
         continue
 
     if counter > 0 and counter % 50 == 0:
-        print(f"Completed {counter} datasets...")
+        print(f"Completed {counter} datasets of {len(datasets)}...")
     counter += 1
 
     """
@@ -265,7 +291,7 @@ for dataset in datasets:
     if dataset_id in completed:
         repeated.append(dataset_id)
         continue
-    print(f"Looking at {dataset_id}")
+    # print(f"Looking at {dataset_id}")
 
     dataset_version = dataset[1]
     try:
@@ -273,6 +299,10 @@ for dataset in datasets:
     except:
         dataset_version = "1"
         false_versioned.append(dataset_id)
+
+    matched_pipeline_spec = find_pipeline_spec_match(dataset_id, dataset_version)
+    if matched_pipeline_spec:
+        found_pipeline.append(dataset_id)
 
     url_type = dataset[2]
     title = dataset[4]
