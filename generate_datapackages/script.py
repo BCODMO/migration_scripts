@@ -15,6 +15,7 @@ import requests
 import yaml
 import time
 import os
+import re
 from dataflows import Flow
 from dataflows.base.exceptions import ProcessorError
 from datapackage_pipelines.lib import update_resource, update_package
@@ -25,23 +26,46 @@ from bcodmo_frictionless.bcodmo_pipeline_processors import (
     dump_to_s3,
 )
 
-# dataset_ids = ["3300", "2292", "2291"]
-dataset_ids = ["2295"]
+dataset_ids = ["3300", "2292", "2291"]
+# dataset_ids = ["2295"]
 
 BUCKET_NAME = "conrad-migration-test"
-FILENAME = "datasets.csv"
+DATASETS_FILENAME = "datasets.csv"
+# the result of a sparql query getting all of the species columns
+SPECIES_FILENAME = "species.json"
+# the result of a sparql query getting all of the lat lon columns
+LATLON_FILENAME = "latlon.json"
 # Whether the dump to s3 step should be used
 ADD_DUMP = False
 # Whether the list of dataset_ids should be used instead of all datasets
 FILTER = False
 
 
+def extract_dataset_id(url):
+    return str(re.sub(".*\/(\d*)$", r"\1", url))
+
+
 # Parse the csv file containing a list of datasets
-with open(FILENAME, "r") as csv_file:
+with open(DATASETS_FILENAME, "r") as csv_file:
     reader = csv.reader(csv_file)
     # Ignore the header
     next(reader)
     datasets = [dataset for dataset in reader]
+
+
+# Get the species info
+with open(SPECIES_FILENAME, "r") as json_file:
+    js = json.load(json_file)
+    species_list = [
+        {k: s[k]["value"] for k in s.keys()} for s in js["results"]["bindings"]
+    ]
+
+with open(LATLON_FILENAME, "r") as json_file:
+    js = json.load(json_file)
+    latlon_list = [
+        {k: s[k]["value"] for k in s.keys()} for s in js["results"]["bindings"]
+    ]
+    latlon_dict = {extract_dataset_id(s["dataset"]): s for s in latlon_list}
 
 
 def generate_data_url(dataset_id):
@@ -53,43 +77,21 @@ def download_data(url):
     return pd.read_csv(url, sep="\t", comment="#")
 
 
-def make_sparql_query(url, retry=0):
-    r = requests.get(url)
-    if r.status_code != 200:
-        if retry >= 3:
-            raise Exception("SPARQL timed out :(")
-        print(f"Got a status code of {r.status_code}, waiting and retrying...")
-        time.sleep(1)
-        return make_sparql_query(url, retry=retry + 1)
-
-    js = r.json()
-    res = js.get("results", {}).get("bindings", {})
-    return res
-
-
 def get_latlon_fields(dataset_id):
-    url = os.environ.get("LATLON_QUERY").format(dataset_id)
-    res = make_sparql_query(url)
-
-    assert len(res) in [0, 1]
-
-    if len(res) == 0:
-        return None, None
-
-    lat_column = res[0].get("lat_column", {}).get("value", None)
-    lon_column = res[0].get("lon_column", {}).get("value", None)
-
-    return lat_column, lon_column
+    if dataset_id in latlon_dict:
+        return (
+            latlon_dict[dataset_id]["lat_column"],
+            latlon_dict[dataset_id]["lon_column"],
+        )
+    return None, None
 
 
 def get_species_fields(dataset_id):
-    url = os.environ.get("SPECIES_QUERY").format(dataset_id)
-    res = make_sparql_query(url)
-
     return_list = []
-    for result in res:
-        species_column = result.get("species_column", {}).get("value", None)
-        return_list.append(species_column)
+    for species in species_list:
+        new_dataset_id = extract_dataset_id(species["dataset"])
+        if dataset_id == new_dataset_id:
+            return_list.append(species["species_column"])
 
     return return_list
 
@@ -323,4 +325,4 @@ Done!
 
 
 with open("failed_inference.json", "w") as fp:
-    json.dumps(failed_inference, fp)
+    json.dump(failed_inference, fp)
