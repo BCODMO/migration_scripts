@@ -203,6 +203,8 @@ def move_already_existing_pipeline(
             resource["bcodmo:"] = {}
         resource["bcodmo:"]["lat_column"] = lat
         resource["bcodmo:"]["lon_column"] = lon
+    dp["version"] = dataset_version
+    dp["id"] = dataset_id
 
     print(dp)
     print()
