@@ -346,7 +346,7 @@ for dataset in datasets:
 
     matched_pipeline_spec = find_pipeline_spec_match(dataset_id, dataset_version)
     if matched_pipeline_spec:
-        found_pipeline.append(dataset_id)
+        found_pipeline.append({"dataset_id": dataset_id, "path": matched_pipeline_spec})
 
     url_type = dataset[2]
     title = dataset[4]
@@ -382,7 +382,9 @@ for dataset in datasets:
             lon,
         )
         if not success:
-            failed_found_pipeline.append(dataset_id)
+            failed_found_pipeline.append(
+                {"dataset_id": dataset_id, "path": matched_pipeline_spec}
+            )
             generate_pipeline = True
 
     if generate_pipeline:
@@ -422,12 +424,14 @@ Done!
 )
 
 
-with open("failed.json", "w") as fp:
+with open("output.json", "w") as fp:
     json.dump(
         {
-            "failed_inference": failed_inference,
+            "found_pipeline": found_pipeline,
             "failed_found_pipeline": failed_found_pipeline,
+            "failed_inference": failed_inference,
             "false_versioned": false_versioned,
+            "repeated": repeated,
         },
         fp,
     )
