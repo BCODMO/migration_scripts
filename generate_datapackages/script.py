@@ -170,6 +170,42 @@ found_pipeline = []
 failed_inference = []
 
 
+def move_already_existing_pipeline(
+    path, dataset_id, dataset_version, species, unique_species, lat, lon
+):
+    dp_path = path.replace("datapackage.json")
+    try:
+        with open(dp_path, "r") as dp_fp:
+            dp = json.load(dp_fp)
+    except IOError:
+        print("DP doesn't exist", dp_path)
+        return False
+
+    assert len(dp["resources"]) == 1
+
+    # add unique species to dp
+    if len(species):
+        for i, s in enumerate(species):
+            for field in dp["resources"][0]["schema"]["fields"]:
+                if field["name"] == s:
+                    if "bcodmo:" not in field:
+                        field["bcodmo:"] = {}
+                    field["bcodmo:"]["unique"] = unique_species[i]
+
+    if lat and lon:
+        resource = dp["resources"][0]
+        if "bcodmo:" not in resource:
+            resource["bcodmo:"] = {}
+        resource["bcodmo:"]["lat_column"] = lat
+        resource["bcodmo:"]["lon_column"] = lon
+
+    print(dp)
+
+    # TODO save dp, pipeline-spec, and data
+
+    return True
+
+
 def generate_and_run_pipeline(
     title, dataset_id, dataset_version, species, unique_species, lat, lon, retry=False
 ):
@@ -320,17 +356,33 @@ for dataset in datasets:
     if len(species):
         df = download_data(url)
         unique_species = get_unique_species(df, species)
-    r, inference_failed = generate_and_run_pipeline(
-        title, dataset_id, dataset_version, species, unique_species, lat, lon,
-    )
 
-    if inference_failed:
-        print("Inference failed")
-        failed_inference.append(dataset_id)
+    generate_pipeline = not matched_pipeline_spec
+    if not generate_pipeline:
+        succes = move_already_existing_pipeline(
+            matched_pipeline_spec,
+            dataset_id,
+            dataset_version,
+            species,
+            unique_species,
+            lat,
+            lon,
+        )
+        if not success:
+            generate_pipeline = True
 
-    print(r[0].descriptor)
-    print()
-    print()
+    if generate_pipeline:
+        r, inference_failed = generate_and_run_pipeline(
+            title, dataset_id, dataset_version, species, unique_species, lat, lon,
+        )
+
+        if inference_failed:
+            print("Inference failed")
+            failed_inference.append(dataset_id)
+
+        print(r[0].descriptor)
+        print()
+        print()
 
     completed.append(dataset_id)
 
