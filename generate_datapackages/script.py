@@ -369,7 +369,7 @@ for dataset in datasets:
 
     generate_pipeline = not matched_pipeline_spec
     if not generate_pipeline:
-        succes = move_already_existing_pipeline(
+        success = move_already_existing_pipeline(
             matched_pipeline_spec,
             dataset_id,
             dataset_version,
