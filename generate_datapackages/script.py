@@ -169,6 +169,7 @@ false_versioned = []
 repeated = []
 found_pipeline = []
 failed_inference = []
+failed_found_pipeline = []
 
 
 def move_already_existing_pipeline(
@@ -183,7 +184,9 @@ def move_already_existing_pipeline(
         print("DP doesn't exist", dp_path)
         return False
 
-    assert len(dp["resources"]) == 1
+    if len(dp["resources"]) != 1:
+        print("More than one resource")
+        return False
 
     # add unique species to dp
     if len(species):
@@ -379,6 +382,7 @@ for dataset in datasets:
             lon,
         )
         if not success:
+            failed_found_pipeline.append(dataset_id)
             generate_pipeline = True
 
     if generate_pipeline:
@@ -410,6 +414,7 @@ print(
 Done!
 
 {len(found_pipeline)} found pipeline-specs
+{len(failed_found_pipeline)} failed found pipeline-specs
 {len(failed_inference)} failed inference
 {len(false_versioned)} false versions
 {len(repeated)} repeated
@@ -417,5 +422,12 @@ Done!
 )
 
 
-with open("failed_inference.json", "w") as fp:
-    json.dump(failed_inference, fp)
+with open("failed.json", "w") as fp:
+    json.dump(
+        {
+            "failed_inference": failed_inference,
+            "failed_found_pipeline": failed_found_pipeline,
+            "false_versioned": false_versioned,
+        },
+        fp,
+    )

@@ -9,3 +9,9 @@ The following paths were removed from the result of the find command:
 
 ```
 
+
+Dataset IDs to note:
+
+- Dataset 2472 has non utf-8 encoded character in it, so we ignore it for the purpose of unique stuff (it won't load into pandas)
+
+
