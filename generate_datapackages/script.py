@@ -28,6 +28,7 @@ from bcodmo_frictionless.bcodmo_pipeline_processors import (
 
 dataset_ids = ["3300", "2292", "2291"]
 # dataset_ids = ["2295"]
+dataset_ids = ["2472"]
 
 BUCKET_NAME = "conrad-migration-test"
 DATASETS_FILENAME = "datasets.csv"
@@ -86,7 +87,7 @@ def generate_data_url(dataset_id):
 
 
 def download_data(url):
-    return pd.read_csv(url, sep="\t", comment="#")
+    return pd.read_csv(url, sep="\t", comment="#", error_bad_lines=False)
 
 
 def find_pipeline_spec_match(dataset_id, dataset_version):
@@ -173,6 +174,7 @@ failed_inference = []
 def move_already_existing_pipeline(
     path, dataset_id, dataset_version, species, unique_species, lat, lon
 ):
+    print("Moving already existing")
     dp_path = path.replace("datapackage.json")
     try:
         with open(dp_path, "r") as dp_fp:
@@ -200,6 +202,9 @@ def move_already_existing_pipeline(
         resource["bcodmo:"]["lon_column"] = lon
 
     print(dp)
+    print()
+    print()
+    print()
 
     # TODO save dp, pipeline-spec, and data
 
@@ -327,7 +332,7 @@ for dataset in datasets:
     if dataset_id in completed:
         repeated.append(dataset_id)
         continue
-    # print(f"Looking at {dataset_id}")
+    print(f"Looking at {dataset_id}")
 
     dataset_version = dataset[1]
     try:
@@ -353,9 +358,14 @@ for dataset in datasets:
     lat, lon = get_latlon_fields(dataset_id)
     species = get_species_fields(dataset_id)
     unique_species = []
-    if len(species):
-        df = download_data(url)
-        unique_species = get_unique_species(df, species)
+    # TODO REMOVE MATCHED PIPELINE SPEC BOOL
+    if len(species) and matched_pipeline_spec:
+        if dataset_id in ["2472"]:
+            # We skip this species for now
+            species = []
+        else:
+            df = download_data(url)
+            unique_species = get_unique_species(df, species)
 
     generate_pipeline = not matched_pipeline_spec
     if not generate_pipeline:
@@ -372,6 +382,7 @@ for dataset in datasets:
             generate_pipeline = True
 
     if generate_pipeline:
+        continue
         r, inference_failed = generate_and_run_pipeline(
             title, dataset_id, dataset_version, species, unique_species, lat, lon,
         )
