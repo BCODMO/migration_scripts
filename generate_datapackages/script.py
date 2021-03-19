@@ -175,7 +175,7 @@ def move_already_existing_pipeline(
     path, dataset_id, dataset_version, species, unique_species, lat, lon
 ):
     print("Moving already existing")
-    dp_path = path.replace("datapackage.json")
+    dp_path = path.replace("pipeline-spec.yaml", "datapackage.json")
     try:
         with open(dp_path, "r") as dp_fp:
             dp = json.load(dp_fp)
