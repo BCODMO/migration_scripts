@@ -200,7 +200,7 @@ def move_already_existing_pipeline(
 
     # Here we confirm that the files are the same on the server as on s3
     with open(path, "r") as pipeline_spec_file:
-        if "bcodmo_pipeline_processors.dump_to_path" not in "".join(
+        if "bcodmo_pipeline_processors.dump_to_s3" in "".join(
             pipeline_spec_file.readlines()
         ):
             res_path = dp["resources"][0]["path"]
@@ -212,7 +212,7 @@ def move_already_existing_pipeline(
             s3.download_fileobj(LAMINAR_DUMP_BUCKET, object_key, f)
             with open(data_path, "r") as local_f:
                 diff = difflib.ndiff(f.readlines(), local_f.readlines())
-                print("RESULT OF DIFF", diff)
+                print("RESULT OF DIFF", "".join(diff))
         else:
             print("Skipping the diff because this file wasn't dumped with dump_to_s3")
 
