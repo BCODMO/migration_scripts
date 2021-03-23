@@ -181,6 +181,7 @@ found_pipeline = []
 failed_inference = []
 failed_found_pipeline = []
 s3_and_local_different = []
+s3_and_local_comparison_failed = []
 
 
 def move_already_existing_pipeline(
@@ -205,32 +206,41 @@ def move_already_existing_pipeline(
             "bcodmo_pipeline_processors.dump_to_s3" in pipeline_str
             and "datasetId: ''" not in pipeline_str
             # List of problem datasets we will ignore
-            and dataset_id
-            not in [
-                # Ignoring because dump processor had incorrect dump location
-                "813173",
-                # Ignoring because the dataset_id does not match the one in the pipeline-spec
-                "816347",
-                # Ignoring because version in pipeline-spec is different from version here
-                "819471",
-            ]
+            # and dataset_id
+            # not in [
+            # Ignoring because dump processor had incorrect dump location
+            #    "813173",
+            # Ignoring because the dataset_id does not match the one in the pipeline-spec
+            #    "816347",
+            # Ignoring because version in pipeline-spec is different from version here
+            #    "819471",
+            # ]
         ):
             res_path = dp["resources"][0]["name"] + ".csv"
             data_path = path.replace("pipeline-spec.yaml", res_path)
             object_key = f"{dataset_id}/{dataset_version}/data/{res_path}"
-            print("dataPath", data_path)
-            print("objectKey", object_key)
-            s3_str = (
-                s3.get_object(Bucket=LAMINAR_DUMP_BUCKET, Key=object_key)["Body"]
-                .read()
-                .decode("utf-8")
-            )
+            try:
+                s3_str = (
+                    s3.get_object(Bucket=LAMINAR_DUMP_BUCKET, Key=object_key)["Body"]
+                    .read()
+                    .decode("utf-8")
+                )
 
-            with open(data_path, "r") as local_f:
-                local_str = local_f.read()
-                if local_str != s3_str:
-                    print("NOT THE SAME")
-                    s3_and_local_different.append(dataset_id)
+                with open(data_path, "r") as local_f:
+                    local_str = local_f.read()
+                    if local_str != s3_str:
+                        print("NOT THE SAME")
+                        s3_and_local_different.append(
+                            {
+                                "dataset_id": dataset_id,
+                                "s3_key": object_key,
+                                "path": path,
+                            }
+                        )
+            except:
+                s3_and_local_comparison_failed.append(
+                    {"dataset_id": dataset_id, "s3_key": object_key, "path": path}
+                )
 
         else:
             print("Skipping the diff because this file wasn't dumped with dump_to_s3")
@@ -492,6 +502,7 @@ Done!
 {len(false_versioned)} false versions
 {len(repeated)} repeated
 {len(s3_and_local_different)} different between s3 and local
+{len(s3_and_local_comparison_failed)} comparisons between s3 and local failed
 """
 )
 
@@ -505,6 +516,7 @@ with open("output.json", "w") as fp:
             "false_versioned": false_versioned,
             "repeated": repeated,
             "s3_and_local_different": s3_and_local_different,
+            "s3_and_local_comparison_failed": s3_and_local_comparison_failed,
         },
         fp,
     )
