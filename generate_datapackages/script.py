@@ -205,14 +205,21 @@ def move_already_existing_pipeline(
         ):
             res_path = dp["resources"][0]["path"]
             data_path = path.replace("pipeline-spec.yaml", res_path)
-            print("dataPath", data_path)
-            f = io.BytesIO()
             object_key = f"{dataset_id}/{dataset_version}/data/{res_path}"
+            print("dataPath", data_path)
             print("objectKey", object_key)
-            s3.download_fileobj(LAMINAR_DUMP_BUCKET, object_key, f)
+            s3_str = (
+                s3.get_object(Bucket=LAMINAR_DUMP_BUCKET, Key=object_key)["Body"]
+                .read()
+                .decode("utf-8")
+            )
+
             with open(data_path, "r") as local_f:
-                diff = difflib.ndiff(f.readlines(), local_f.readlines())
-                print("RESULT OF DIFF", "".join(diff))
+                local_str = local_f.read()
+                if local_str != s3_str:
+                    print("NOT THE SAME")
+                    s3_and_local_different.append(dataset_id)
+
         else:
             print("Skipping the diff because this file wasn't dumped with dump_to_s3")
 
@@ -472,6 +479,7 @@ Done!
 {len(failed_inference)} failed inference
 {len(false_versioned)} false versions
 {len(repeated)} repeated
+{len(s3_and_local_different)} different between s3 and local
 """
 )
 
@@ -484,6 +492,7 @@ with open("output.json", "w") as fp:
             "failed_inference": failed_inference,
             "false_versioned": false_versioned,
             "repeated": repeated,
+            "s3_and_local_different": s3_and_local_different,
         },
         fp,
     )
