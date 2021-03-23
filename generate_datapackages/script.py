@@ -200,8 +200,10 @@ def move_already_existing_pipeline(
 
     # Here we confirm that the files are the same on the server as on s3
     with open(path, "r") as pipeline_spec_file:
-        if "bcodmo_pipeline_processors.dump_to_s3" in "".join(
-            pipeline_spec_file.readlines()
+        pipeline_str = "".join(pipeline_spec_file.readlines())
+        if (
+            "bcodmo_pipeline_processors.dump_to_s3" in pipeline_str
+            and "datasetId: ''" not in pipeline_str
         ):
             res_path = dp["resources"][0]["name"] + ".csv"
             data_path = path.replace("pipeline-spec.yaml", res_path)
