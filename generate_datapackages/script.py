@@ -203,7 +203,7 @@ def move_already_existing_pipeline(
         if "bcodmo_pipeline_processors.dump_to_s3" in "".join(
             pipeline_spec_file.readlines()
         ):
-            res_path = dp["resources"][0]["path"]
+            res_path = dp["resources"][0]["name"] + ".csv"
             data_path = path.replace("pipeline-spec.yaml", res_path)
             object_key = f"{dataset_id}/{dataset_version}/data/{res_path}"
             print("dataPath", data_path)
