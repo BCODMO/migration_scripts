@@ -205,7 +205,7 @@ def move_already_existing_pipeline(
             "bcodmo_pipeline_processors.dump_to_s3" in pipeline_str
             and "datasetId: ''" not in pipeline_str
             # List of problem datasets we will ignore
-            and datasetId not in ["813173"]
+            and dataset_id not in ["813173"]
         ):
             res_path = dp["resources"][0]["name"] + ".csv"
             data_path = path.replace("pipeline-spec.yaml", res_path)
