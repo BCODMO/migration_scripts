@@ -204,10 +204,8 @@ def move_already_existing_pipeline(
     print("dataPath", data_path)
     f = io.BytesIO()
     object_key = f"{dataset_id}/{dataset_version}/data/{res_path}"
-    print("objectKey", objectKey)
-    s3.download_fileobj(
-        LAMINAR_DUMP_BUCKET, object_key, f
-    )
+    print("objectKey", object_key)
+    s3.download_fileobj(LAMINAR_DUMP_BUCKET, object_key, f)
     with open(data_path, "r") as local_f:
         diff = difflib.ndiff(f.readlines(), local_f.readlines())
         print("RESULT OF DIFF", diff)
