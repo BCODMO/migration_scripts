@@ -200,10 +200,8 @@ def move_already_existing_pipeline(
 
     # Here we confirm that the files are the same on the server as on s3
     with open(path, "r") as pipeline_spec_file:
-        if (
-            not pipeline_spec_file.readlines()
-            .join("")
-            .contains("bcodmo_pipeline_processors.dump_to_path")
+        if "bcodmo_pipeline_processors.dump_to_path" not in "".join(
+            pipeline_spec_file.readlines()
         ):
             res_path = dp["resources"][0]["path"]
             data_path = path.replace("pipeline-spec.yaml", res_path)
