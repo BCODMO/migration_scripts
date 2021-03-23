@@ -12,10 +12,12 @@ import json
 import pandas as pd
 import csv
 import requests
+import io
 import yaml
 import time
 import os
 import re
+import difflib
 from dataflows import Flow
 from dataflows.base.exceptions import ProcessorError
 from datapackage_pipelines.lib import update_resource, update_package
@@ -26,11 +28,14 @@ from bcodmo_frictionless.bcodmo_pipeline_processors import (
     dump_to_s3,
 )
 
+s3 = boto3.client("s3")
+
 dataset_ids = ["3300", "2292", "2291"]
 # dataset_ids = ["2295"]
 dataset_ids = ["2472"]
 
 BUCKET_NAME = "conrad-migration-test"
+LAMINAR_DUMP_BUCKET = "laminar-dump"
 DATASETS_FILENAME = "datasets.csv"
 # the result of a sparql query getting all of the species columns
 SPECIES_FILENAME = "species.json"
@@ -133,7 +138,12 @@ def get_unique_species(df, species):
 
 
 def _get_pipeline_spec(
-    title, description, dataset_id, dataset_version, version, steps,
+    title,
+    description,
+    dataset_id,
+    dataset_version,
+    version,
+    steps,
 ):
     yaml_string = yaml.dump(
         {
@@ -170,12 +180,12 @@ repeated = []
 found_pipeline = []
 failed_inference = []
 failed_found_pipeline = []
+s3_and_local_different = []
 
 
 def move_already_existing_pipeline(
-    path, dataset_id, dataset_version, species, unique_species, lat, lon
+    path, title, dataset_id, dataset_version, species, unique_species, lat, lon
 ):
-    print("Moving already existing")
     dp_path = path.replace("pipeline-spec.yaml", "datapackage.json")
     try:
         with open(dp_path, "r") as dp_fp:
@@ -187,6 +197,18 @@ def move_already_existing_pipeline(
     if len(dp["resources"]) != 1:
         print("More than one resource")
         return False
+
+    # Here we confirm that the files are the same on the server as on s3
+    res_path = dp["resources"][0]["path"]
+    data_path = path.replace("pipeline-spec.yaml", res_path)
+    print("dataPath", data_path)
+    f = io.BytesIO()
+    s3.download_fileobj(
+        LAMINAR_DUMP_BUCKET, f"{dataset_id}/{dataset_version}/data/{res_path}", f
+    )
+    with open(data_path, "r") as local_f:
+        diff = difflib.ndiff(f.readlines(), local_f.readlines())
+        print("RESULT OF DIFF", diff)
 
     # add unique species to dp
     if len(species):
@@ -235,7 +257,9 @@ def generate_and_run_pipeline(
                     "delimiter": "\t",
                     "infer_strategy": "strings" if retry else "full",
                     "cast_strategy": "strings" if retry else "schema",
-                    "override_schema": {"missingValues": ["", "nd"],},
+                    "override_schema": {
+                        "missingValues": ["", "nd"],
+                    },
                 },
             }
         ]
@@ -243,7 +267,11 @@ def generate_and_run_pipeline(
         # Add the unique species list to each species column
         processor_fields = {}
         for i, col_name in enumerate(species):
-            processor_fields[col_name] = {"bcodmo:": {"unique": unique_species[i],}}
+            processor_fields[col_name] = {
+                "bcodmo:": {
+                    "unique": unique_species[i],
+                }
+            }
         if len(processor_fields.keys()):
             steps.append(
                 {
@@ -268,7 +296,10 @@ def generate_and_run_pipeline(
         steps.append(
             {
                 "run": "update_package",
-                "parameters": {"version": dataset_version, "id": dataset_id,},
+                "parameters": {
+                    "version": dataset_version,
+                    "id": dataset_id,
+                },
             }
         )
 
@@ -285,7 +316,11 @@ def generate_and_run_pipeline(
                         "temporal_format_property": "outputFormat",
                         "bucket_name": BUCKET_NAME,
                         # TODO- ask adam if empty data manager is necessary?
-                        "data_manager": {"name": "", "orcid": "", "submission_id": "",},
+                        "data_manager": {
+                            "name": "",
+                            "orcid": "",
+                            "submission_id": "",
+                        },
                     },
                 }
             )
@@ -303,7 +338,9 @@ def generate_and_run_pipeline(
 
             flow_params.append(processor(step["parameters"]))
 
-        r = Flow(*flow_params,).process()
+        r = Flow(
+            *flow_params,
+        ).process()
         return r, retry
 
     except ProcessorError as e:
@@ -376,6 +413,7 @@ for dataset in datasets:
     if not generate_pipeline:
         success = move_already_existing_pipeline(
             matched_pipeline_spec,
+            title,
             dataset_id,
             dataset_version,
             species,
@@ -392,7 +430,13 @@ for dataset in datasets:
     if generate_pipeline:
         continue
         r, inference_failed = generate_and_run_pipeline(
-            title, dataset_id, dataset_version, species, unique_species, lat, lon,
+            title,
+            dataset_id,
+            dataset_version,
+            species,
+            unique_species,
+            lat,
+            lon,
         )
 
         if inference_failed:
