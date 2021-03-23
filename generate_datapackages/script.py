@@ -211,6 +211,8 @@ def move_already_existing_pipeline(
                 "813173",
                 # Ignoring because the dataset_id does not match the one in the pipeline-spec
                 "816347",
+                # Ignoring because version in pipeline-spec is different from version here
+                "819471",
             ]
         ):
             res_path = dp["resources"][0]["name"] + ".csv"
