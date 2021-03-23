@@ -199,16 +199,22 @@ def move_already_existing_pipeline(
         return False
 
     # Here we confirm that the files are the same on the server as on s3
-    res_path = dp["resources"][0]["path"]
-    data_path = path.replace("pipeline-spec.yaml", res_path)
-    print("dataPath", data_path)
-    f = io.BytesIO()
-    object_key = f"{dataset_id}/{dataset_version}/data/{res_path}"
-    print("objectKey", object_key)
-    s3.download_fileobj(LAMINAR_DUMP_BUCKET, object_key, f)
-    with open(data_path, "r") as local_f:
-        diff = difflib.ndiff(f.readlines(), local_f.readlines())
-        print("RESULT OF DIFF", diff)
+    with open(path, "r") as pipeline_spec_file:
+        if not pipeline_spec_file.readlines().contains(
+            "bcodmo_pipeline_processors.dump_to_path"
+        ):
+            res_path = dp["resources"][0]["path"]
+            data_path = path.replace("pipeline-spec.yaml", res_path)
+            print("dataPath", data_path)
+            f = io.BytesIO()
+            object_key = f"{dataset_id}/{dataset_version}/data/{res_path}"
+            print("objectKey", object_key)
+            s3.download_fileobj(LAMINAR_DUMP_BUCKET, object_key, f)
+            with open(data_path, "r") as local_f:
+                diff = difflib.ndiff(f.readlines(), local_f.readlines())
+                print("RESULT OF DIFF", diff)
+        else:
+            print("Skipping the diff because this file wasn't dumped with dump_to_s3")
 
     # add unique species to dp
     if len(species):
