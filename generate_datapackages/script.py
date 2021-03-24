@@ -50,6 +50,8 @@ ADD_DUMP = True
 # Whether the list of dataset_ids should be used instead of all datasets
 FILTER = False
 
+SKIP_DATASETS = ["2321"]
+
 
 def extract_dataset_id(url):
     return str(re.sub(".*\/(\d*)$", r"\1", url))
@@ -403,6 +405,10 @@ for dataset in datasets:
     dataset_id = dataset[0]
     if dataset_id in completed:
         repeated.append(dataset_id)
+        continue
+
+    if dataset_id in SKIP_DATASETS:
+        print("Skipping dataset", dataset_id)
         continue
     print(f"Looking at {dataset_id}")
 
