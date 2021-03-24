@@ -46,7 +46,7 @@ LATLON_FILENAME = "latlon.json"
 PIPELINE_SPECS_FILENAME = "pipelines.txt"
 
 # Whether the dump to s3 step should be used
-ADD_DUMP = False
+ADD_DUMP = True
 # Whether the list of dataset_ids should be used instead of all datasets
 FILTER = False
 
@@ -96,6 +96,8 @@ def download_data(url):
 
 
 def find_pipeline_spec_match(dataset_id, dataset_version):
+    # We skip pipeline specs for now
+    return None
     matches = []
     for path in pipeline_specs_list:
         search_string = f"/{dataset_id}/{dataset_version}/data/pipeline-spec.yaml"
@@ -205,16 +207,6 @@ def move_already_existing_pipeline(
         if (
             "bcodmo_pipeline_processors.dump_to_s3" in pipeline_str
             and "datasetId: ''" not in pipeline_str
-            # List of problem datasets we will ignore
-            # and dataset_id
-            # not in [
-            # Ignoring because dump processor had incorrect dump location
-            #    "813173",
-            # Ignoring because the dataset_id does not match the one in the pipeline-spec
-            #    "816347",
-            # Ignoring because version in pipeline-spec is different from version here
-            #    "819471",
-            # ]
         ):
             res_path = dp["resources"][0]["name"] + ".csv"
             data_path = path.replace("pipeline-spec.yaml", res_path)
@@ -229,7 +221,7 @@ def move_already_existing_pipeline(
                 with open(data_path, "r") as local_f:
                     local_str = local_f.read()
                     if local_str != s3_str:
-                        print("NOT THE SAME")
+                        print("NOT THE SAME BETWEEN S3 AND LOCAL")
                         s3_and_local_different.append(
                             {
                                 "dataset_id": dataset_id,
@@ -286,12 +278,15 @@ def generate_and_run_pipeline(
                 "parameters": {
                     "from": url,
                     # TODO add filename/clear name as resource name
-                    "name": "res1",
+                    "name": title,
                     "format": "csv",
                     "skip_rows": ["#"],
                     "delimiter": "\t",
-                    "infer_strategy": "strings" if retry else "full",
-                    "cast_strategy": "strings" if retry else "schema",
+                    # We've removed infer for now
+                    # "infer_strategy": "strings" if retry else "full",
+                    # "cast_strategy": "strings" if retry else "schema",
+                    "infer_strategy": "strings",
+                    "cast_strategy": "strings",
                     "override_schema": {
                         "missingValues": ["", "nd"],
                     },
@@ -415,7 +410,7 @@ for dataset in datasets:
     try:
         int(dataset_version)
     except:
-        dataset_version = "1"
+        dataset_version = "0"
         false_versioned.append(dataset_id)
 
     matched_pipeline_spec = find_pipeline_spec_match(dataset_id, dataset_version)
@@ -435,8 +430,7 @@ for dataset in datasets:
     lat, lon = get_latlon_fields(dataset_id)
     species = get_species_fields(dataset_id)
     unique_species = []
-    # TODO REMOVE MATCHED PIPELINE SPEC BOOL
-    if len(species) and matched_pipeline_spec:
+    if len(species):
         if dataset_id in ["2472"]:
             # We skip this species for now
             species = []
@@ -463,7 +457,6 @@ for dataset in datasets:
             generate_pipeline = True
 
     if generate_pipeline:
-        continue
         r, inference_failed = generate_and_run_pipeline(
             title,
             dataset_id,
@@ -490,6 +483,10 @@ for dataset in datasets:
     - do a find for all pipeline-spec, filter that later to see if there is a pipeline-spec.yaml
     - in embargo, if dataset_id has been seen before, ignore it
     - create a dump_to_s3 step
+
+
+    - run without infer types, (later need to implement hash compare)
+    -
     """
 
 print(
