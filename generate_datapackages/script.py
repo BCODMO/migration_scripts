@@ -34,7 +34,8 @@ dataset_ids = ["3300", "2292", "2291"]
 # dataset_ids = ["2295"]
 dataset_ids = ["2472"]
 
-BUCKET_NAME = "conrad-migration-test"
+# BUCKET_NAME = "conrad-migration-test"
+BUCKET_NAME = "bcodmo.files"
 LAMINAR_DUMP_BUCKET = "laminar-dump"
 DATASETS_FILENAME = "datasets.csv"
 # the result of a sparql query getting all of the species columns
@@ -142,12 +143,7 @@ def get_unique_species(df, species):
 
 
 def _get_pipeline_spec(
-    title,
-    description,
-    dataset_id,
-    dataset_version,
-    version,
-    steps,
+    title, description, dataset_id, dataset_version, version, steps,
 ):
     yaml_string = yaml.dump(
         {
@@ -290,9 +286,7 @@ def generate_and_run_pipeline(
                     # "cast_strategy": "strings" if retry else "schema",
                     "infer_strategy": "strings",
                     "cast_strategy": "strings",
-                    "override_schema": {
-                        "missingValues": ["", "nd"],
-                    },
+                    "override_schema": {"missingValues": ["", "nd"],},
                 },
             }
         ]
@@ -300,11 +294,7 @@ def generate_and_run_pipeline(
         # Add the unique species list to each species column
         processor_fields = {}
         for i, col_name in enumerate(species):
-            processor_fields[col_name] = {
-                "bcodmo:": {
-                    "unique": unique_species[i],
-                }
-            }
+            processor_fields[col_name] = {"bcodmo:": {"unique": unique_species[i],}}
         if len(processor_fields.keys()):
             steps.append(
                 {
@@ -329,10 +319,7 @@ def generate_and_run_pipeline(
         steps.append(
             {
                 "run": "update_package",
-                "parameters": {
-                    "version": dataset_version,
-                    "id": dataset_id,
-                },
+                "parameters": {"version": dataset_version, "id": dataset_id,},
             }
         )
 
@@ -349,11 +336,7 @@ def generate_and_run_pipeline(
                         "temporal_format_property": "outputFormat",
                         "bucket_name": BUCKET_NAME,
                         # TODO- ask adam if empty data manager is necessary?
-                        "data_manager": {
-                            "name": "",
-                            "orcid": "",
-                            "submission_id": "",
-                        },
+                        "data_manager": {"name": "", "orcid": "", "submission_id": "",},
                     },
                 }
             )
@@ -371,9 +354,7 @@ def generate_and_run_pipeline(
 
             flow_params.append(processor(step["parameters"]))
 
-        r = Flow(
-            *flow_params,
-        ).process()
+        r = Flow(*flow_params,).process()
         return r, retry
 
     except ProcessorError as e:
@@ -408,15 +389,15 @@ for dataset in datasets:
         repeated.append(dataset_id)
         continue
 
+    dataset_version = dataset[1]
+    try:
+        int(dataset_version)
+    except:
+        dataset_version = "0"
+        false_versioned.append(dataset_id)
+
     print(f"Looking at {dataset_id}")
     try:
-
-        dataset_version = dataset[1]
-        try:
-            int(dataset_version)
-        except:
-            dataset_version = "0"
-            false_versioned.append(dataset_id)
 
         matched_pipeline_spec = find_pipeline_spec_match(dataset_id, dataset_version)
         if matched_pipeline_spec:
@@ -465,13 +446,7 @@ for dataset in datasets:
 
         if generate_pipeline:
             r, inference_failed = generate_and_run_pipeline(
-                title,
-                dataset_id,
-                dataset_version,
-                species,
-                unique_species,
-                lat,
-                lon,
+                title, dataset_id, dataset_version, species, unique_species, lat, lon,
             )
 
             if inference_failed:
@@ -489,7 +464,9 @@ for dataset in datasets:
 
         response = requests.get(generate_data_url(dataset_id))
         obj = io.BytesIO(response.content)
-        object_key = f".errors/dataset_{dataset_id}.tsv"
+        object_key = (
+            f"_datasets/.errors/{dataset_id}/{dataset_version}/dataset_{dataset_id}.tsv"
+        )
 
         r = s3.put_object(Bucket=BUCKET_NAME, Key=object_key, Body=obj)
 
