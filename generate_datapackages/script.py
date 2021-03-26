@@ -186,6 +186,7 @@ failed_inference = []
 failed_found_pipeline = []
 s3_and_local_different = []
 s3_and_local_comparison_failed = []
+failed_dump = []
 
 
 def move_already_existing_pipeline(
@@ -341,7 +342,7 @@ def generate_and_run_pipeline(
                 {
                     "run": "bcodmo_pipeline_processors.dump_to_s3",
                     "parameters": {
-                        "prefix": f"{dataset_id}/{dataset_version}/data",
+                        "prefix": f"_datasets/{dataset_id}/{dataset_version}",
                         "force-format": True,
                         "format": "csv",
                         "save_pipeline_spec": True,
@@ -407,81 +408,90 @@ for dataset in datasets:
         repeated.append(dataset_id)
         continue
 
-    if dataset_id in SKIP_DATASETS:
-        print("Skipping dataset", dataset_id)
-        continue
     print(f"Looking at {dataset_id}")
-
-    dataset_version = dataset[1]
     try:
-        int(dataset_version)
-    except:
-        dataset_version = "0"
-        false_versioned.append(dataset_id)
 
-    matched_pipeline_spec = find_pipeline_spec_match(dataset_id, dataset_version)
-    if matched_pipeline_spec:
-        found_pipeline.append({"dataset_id": dataset_id, "path": matched_pipeline_spec})
+        dataset_version = dataset[1]
+        try:
+            int(dataset_version)
+        except:
+            dataset_version = "0"
+            false_versioned.append(dataset_id)
 
-    url_type = dataset[2]
-    title = dataset[4]
-
-    url = generate_data_url(dataset_id)
-    if url_type != "Primary":
-        url = dataset[3]
-
-    """
-    Make the sparql queries to get lat_lon and species
-    """
-    lat, lon = get_latlon_fields(dataset_id)
-    species = get_species_fields(dataset_id)
-    unique_species = []
-    if len(species):
-        if dataset_id in ["2472"]:
-            # We skip this species for now
-            species = []
-        else:
-            df = download_data(url)
-            unique_species = get_unique_species(df, species)
-
-    generate_pipeline = not matched_pipeline_spec
-    if not generate_pipeline:
-        success = move_already_existing_pipeline(
-            matched_pipeline_spec,
-            title,
-            dataset_id,
-            dataset_version,
-            species,
-            unique_species,
-            lat,
-            lon,
-        )
-        if not success:
-            failed_found_pipeline.append(
+        matched_pipeline_spec = find_pipeline_spec_match(dataset_id, dataset_version)
+        if matched_pipeline_spec:
+            found_pipeline.append(
                 {"dataset_id": dataset_id, "path": matched_pipeline_spec}
             )
-            generate_pipeline = True
 
-    if generate_pipeline:
-        r, inference_failed = generate_and_run_pipeline(
-            title,
-            dataset_id,
-            dataset_version,
-            species,
-            unique_species,
-            lat,
-            lon,
-        )
+        url_type = dataset[2]
+        title = dataset[4]
 
-        if inference_failed:
-            print("Inference failed")
-            failed_inference.append(dataset_id)
+        url = generate_data_url(dataset_id)
+        if url_type != "Primary":
+            url = dataset[3]
 
-        print(r[0].descriptor)
-        print()
-        print()
+        """
+        Make the sparql queries to get lat_lon and species
+        """
+        lat, lon = get_latlon_fields(dataset_id)
+        species = get_species_fields(dataset_id)
+        unique_species = []
+        if len(species):
+            if dataset_id in ["2472"]:
+                # We skip this species for now
+                species = []
+            else:
+                df = download_data(url)
+                unique_species = get_unique_species(df, species)
 
-    completed.append(dataset_id)
+        generate_pipeline = not matched_pipeline_spec
+        if not generate_pipeline:
+            success = move_already_existing_pipeline(
+                matched_pipeline_spec,
+                title,
+                dataset_id,
+                dataset_version,
+                species,
+                unique_species,
+                lat,
+                lon,
+            )
+            if not success:
+                failed_found_pipeline.append(
+                    {"dataset_id": dataset_id, "path": matched_pipeline_spec}
+                )
+                generate_pipeline = True
+
+        if generate_pipeline:
+            r, inference_failed = generate_and_run_pipeline(
+                title,
+                dataset_id,
+                dataset_version,
+                species,
+                unique_species,
+                lat,
+                lon,
+            )
+
+            if inference_failed:
+                print("Inference failed")
+                failed_inference.append(dataset_id)
+
+            print(r[0].descriptor)
+            print()
+            print()
+
+        completed.append(dataset_id)
+    except:
+        print("FAILED. Dumping to errors")
+        failed_dump.append(dataset_id)
+
+        response = requests.get(generate_data_url(dataset_id))
+        obj = io.BytesIO(response.content)
+        object_key = f".errors/dataset_{dataset_id}.tsv"
+
+        r = s3.put_object(Bucket=BUCKET_NAME, Key=object_key, Body=obj)
 
     # TODO
     """"
@@ -506,6 +516,7 @@ Done!
 {len(repeated)} repeated
 {len(s3_and_local_different)} different between s3 and local
 {len(s3_and_local_comparison_failed)} comparisons between s3 and local failed
+{len(failed_dump)} failed dumps
 """
 )
 
@@ -520,6 +531,7 @@ with open("output.json", "w") as fp:
             "repeated": repeated,
             "s3_and_local_different": s3_and_local_different,
             "s3_and_local_comparison_failed": s3_and_local_comparison_failed,
+            "failed_dump": failed_dump,
         },
         fp,
     )
