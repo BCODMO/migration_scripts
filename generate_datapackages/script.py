@@ -143,7 +143,12 @@ def get_unique_species(df, species):
 
 
 def _get_pipeline_spec(
-    title, description, dataset_id, dataset_version, version, steps,
+    title,
+    description,
+    dataset_id,
+    dataset_version,
+    version,
+    steps,
 ):
     yaml_string = yaml.dump(
         {
@@ -183,6 +188,7 @@ failed_found_pipeline = []
 s3_and_local_different = []
 s3_and_local_comparison_failed = []
 failed_dump = []
+failed_second_dump = []
 
 
 def move_already_existing_pipeline(
@@ -286,7 +292,9 @@ def generate_and_run_pipeline(
                     # "cast_strategy": "strings" if retry else "schema",
                     "infer_strategy": "strings",
                     "cast_strategy": "strings",
-                    "override_schema": {"missingValues": ["", "nd"],},
+                    "override_schema": {
+                        "missingValues": ["", "nd"],
+                    },
                 },
             }
         ]
@@ -294,7 +302,11 @@ def generate_and_run_pipeline(
         # Add the unique species list to each species column
         processor_fields = {}
         for i, col_name in enumerate(species):
-            processor_fields[col_name] = {"bcodmo:": {"unique": unique_species[i],}}
+            processor_fields[col_name] = {
+                "bcodmo:": {
+                    "unique": unique_species[i],
+                }
+            }
         if len(processor_fields.keys()):
             steps.append(
                 {
@@ -319,7 +331,10 @@ def generate_and_run_pipeline(
         steps.append(
             {
                 "run": "update_package",
-                "parameters": {"version": dataset_version, "id": dataset_id,},
+                "parameters": {
+                    "version": dataset_version,
+                    "id": dataset_id,
+                },
             }
         )
 
@@ -336,7 +351,11 @@ def generate_and_run_pipeline(
                         "temporal_format_property": "outputFormat",
                         "bucket_name": BUCKET_NAME,
                         # TODO- ask adam if empty data manager is necessary?
-                        "data_manager": {"name": "", "orcid": "", "submission_id": "",},
+                        "data_manager": {
+                            "name": "",
+                            "orcid": "",
+                            "submission_id": "",
+                        },
                     },
                 }
             )
@@ -354,7 +373,9 @@ def generate_and_run_pipeline(
 
             flow_params.append(processor(step["parameters"]))
 
-        r = Flow(*flow_params,).process()
+        r = Flow(
+            *flow_params,
+        ).process()
         return r, retry
 
     except ProcessorError as e:
@@ -446,7 +467,13 @@ for dataset in datasets:
 
         if generate_pipeline:
             r, inference_failed = generate_and_run_pipeline(
-                title, dataset_id, dataset_version, species, unique_species, lat, lon,
+                title,
+                dataset_id,
+                dataset_version,
+                species,
+                unique_species,
+                lat,
+                lon,
             )
 
             if inference_failed:
@@ -460,15 +487,18 @@ for dataset in datasets:
         completed.append(dataset_id)
     except:
         print("FAILED. Dumping to errors")
-        failed_dump.append(dataset_id)
+        try:
+            failed_dump.append(dataset_id)
 
-        response = requests.get(generate_data_url(dataset_id))
-        obj = io.BytesIO(response.content)
-        object_key = (
-            f"_datasets/.errors/{dataset_id}/{dataset_version}/dataset_{dataset_id}.tsv"
-        )
+            response = requests.get(generate_data_url(dataset_id))
+            obj = io.BytesIO(response.content)
+            object_key = f"_datasets/.errors/{dataset_id}/{dataset_version}/dataset_{dataset_id}.tsv"
 
-        r = s3.put_object(Bucket=BUCKET_NAME, Key=object_key, Body=obj)
+            r = s3.put_object(Bucket=BUCKET_NAME, Key=object_key, Body=obj)
+        except Exception as e:
+            print(e)
+            print("ALSO FAILED SECOND DUMPING")
+            failed_second_dump.append(dataset_id)
 
     # TODO
     """"
@@ -494,6 +524,7 @@ Done!
 {len(s3_and_local_different)} different between s3 and local
 {len(s3_and_local_comparison_failed)} comparisons between s3 and local failed
 {len(failed_dump)} failed dumps
+{len(failed_second_dump)} failed second dumps
 """
 )
 
@@ -509,6 +540,7 @@ with open("output.json", "w") as fp:
             "s3_and_local_different": s3_and_local_different,
             "s3_and_local_comparison_failed": s3_and_local_comparison_failed,
             "failed_dump": failed_dump,
+            "failed_second_dump": failed_second_dump,
         },
         fp,
     )
