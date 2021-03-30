@@ -51,7 +51,8 @@ ADD_DUMP = True
 # Whether the list of dataset_ids should be used instead of all datasets
 FILTER = False
 
-SKIP_DATASETS = ["2321"]
+# SKIP_DATASETS = ["2321"]
+SKIP_DATASETS = ["555780"]
 
 
 def extract_dataset_id(url):
@@ -409,6 +410,10 @@ for dataset in datasets:
     if dataset_id in completed:
         repeated.append(dataset_id)
         continue
+
+    if dataset_id in SKIP_DATASETS:
+        failed_dump.append(dataset_id)
+        failed_second_dump.append(dataset_id)
 
     dataset_version = dataset[1]
     try:
