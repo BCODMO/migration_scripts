@@ -52,7 +52,7 @@ PIPELINE_SPECS_FILENAME = "pipelines.txt"
 # Whether the dump to s3 step should be used
 ADD_DUMP = True
 # Whether the list of dataset_ids should be used instead of all datasets
-FILTER = True
+FILTER = False
 
 # SKIP_DATASETS = ["2321"]
 
@@ -282,14 +282,11 @@ def move_already_existing_pipeline(
     )
 
     r = s3.upload_file(dp_path, BUCKET_NAME, dp_obj_key)
-    print(r)
     r = s3.upload_file(path, BUCKET_NAME, pipeline_spec_obj_key)
-    print(r)
 
     if move_data:
         print("Moving data also")
         r = s3.upload_file(data_path, BUCKET_NAME, res_filename)
-        print(r)
     else:
         return False
 
