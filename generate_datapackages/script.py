@@ -288,7 +288,7 @@ def move_already_existing_pipeline(
 
     if move_data:
         print("Moving data also")
-        r = s3.meta.client.upload_file(data_path, BUCKET_NAME, res_filename)
+        r = s3.upload_file(data_path, BUCKET_NAME, res_filename)
         print(r)
     else:
         return False
