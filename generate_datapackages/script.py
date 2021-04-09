@@ -517,8 +517,8 @@ for dataset in datasets:
             print(r[0].descriptor)
 
         completed.append(dataset_id)
-    except:
-        print("FAILED. Dumping to errors")
+    except Exception as e:
+        print("FAILED. Dumping to errors", e)
         try:
             failed_dump.append(dataset_id)
 
