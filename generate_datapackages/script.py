@@ -34,6 +34,9 @@ dataset_ids = ["3300", "2292", "2291"]
 # dataset_ids = ["2295"]
 dataset_ids = ["2472"]
 
+datasets_prefix = "_jgofs_1"
+# datasets_prefix = "_datasets"
+
 # BUCKET_NAME = "conrad-migration-test"
 BUCKET_NAME = "bcodmo.files"
 LAMINAR_DUMP_BUCKET = "laminar-dump"
@@ -52,6 +55,8 @@ ADD_DUMP = True
 FILTER = False
 
 # SKIP_DATASETS = ["2321"]
+
+# Skipping 555780 because it is 18GB
 SKIP_DATASETS = ["555780"]
 
 
@@ -100,8 +105,6 @@ def download_data(url):
 
 
 def find_pipeline_spec_match(dataset_id, dataset_version):
-    # We skip pipeline specs for now
-    return None
     matches = []
     for path in pipeline_specs_list:
         search_string = f"/{dataset_id}/{dataset_version}/data/pipeline-spec.yaml"
@@ -196,6 +199,7 @@ def move_already_existing_pipeline(
     path, title, dataset_id, dataset_version, species, unique_species, lat, lon
 ):
     dp_path = path.replace("pipeline-spec.yaml", "datapackage.json")
+    move_data = True
     try:
         with open(dp_path, "r") as dp_fp:
             dp = json.load(dp_fp)
@@ -206,6 +210,9 @@ def move_already_existing_pipeline(
     if len(dp["resources"]) != 1:
         print("More than one resource")
         return False
+    res_name = dp["resources"][0]["name"]
+    res_filename = res_name + ".csv"
+    data_path = path.replace("pipeline-spec.yaml", res_filename)
 
     # Here we confirm that the files are the same on the server as on s3
     with open(path, "r") as pipeline_spec_file:
@@ -214,9 +221,7 @@ def move_already_existing_pipeline(
             "bcodmo_pipeline_processors.dump_to_s3" in pipeline_str
             and "datasetId: ''" not in pipeline_str
         ):
-            res_path = dp["resources"][0]["name"] + ".csv"
-            data_path = path.replace("pipeline-spec.yaml", res_path)
-            object_key = f"{dataset_id}/{dataset_version}/data/{res_path}"
+            object_key = f"{dataset_id}/{dataset_version}/data/{res_filename}"
             try:
                 s3_str = (
                     s3.get_object(Bucket=LAMINAR_DUMP_BUCKET, Key=object_key)["Body"]
@@ -228,6 +233,7 @@ def move_already_existing_pipeline(
                     local_str = local_f.read()
                     if local_str != s3_str:
                         print("NOT THE SAME BETWEEN S3 AND LOCAL")
+                        move_data = False
                         s3_and_local_different.append(
                             {
                                 "dataset_id": dataset_id,
@@ -236,6 +242,7 @@ def move_already_existing_pipeline(
                             }
                         )
             except:
+                move_data = False
                 s3_and_local_comparison_failed.append(
                     {"dataset_id": dataset_id, "s3_key": object_key, "path": path}
                 )
@@ -261,12 +268,30 @@ def move_already_existing_pipeline(
     dp["version"] = dataset_version
     dp["id"] = dataset_id
 
-    print(dp)
-    print()
-    print()
-    print()
+    print("Moving datapackage and pipeline-spec to s3")
+    if move_data:
+        dp_file_name = "datapackage.json"
+        pipeline_spec_file_name = "pipeline-spec.yaml"
+    else:
+        dp_file_name = "_preserved_datapackage.json"
+        pipeline_spec_file_name = "_preserved_pipeline-spec.yaml"
 
-    # TODO save dp, pipeline-spec, and data
+    dp_obj_key = f"{datasets_prefix}/{dataset_id}/{dataset_version}/{dp_file_name}"
+    pipeline_spec_obj_key = (
+        f"{datasets_prefix}/{dataset_id}/{dataset_version}/{pipeline_spec_file_name}"
+    )
+
+    r = s3.upload_to_s3(dp_path, dp_obj_key)
+    print(r)
+    r = s3.upload_to_s3(path, pipeline_spec_obj_key)
+    print(r)
+
+    if move_data:
+        print("Moving data also")
+        r = s3.upload_to_s3(data_path, res_filename)
+        print(r)
+    else:
+        return False
 
     return True
 
@@ -345,7 +370,7 @@ def generate_and_run_pipeline(
                 {
                     "run": "bcodmo_pipeline_processors.dump_to_s3",
                     "parameters": {
-                        "prefix": f"_datasets/{dataset_id}/{dataset_version}",
+                        "prefix": f"{datasets_prefix}/{dataset_id}/{dataset_version}",
                         "force-format": True,
                         "format": "csv",
                         "save_pipeline_spec": True,
@@ -422,6 +447,9 @@ for dataset in datasets:
         dataset_version = "0"
         false_versioned.append(dataset_id)
 
+    print()
+    print()
+    print()
     print(f"Looking at {dataset_id}")
     try:
 
@@ -486,8 +514,6 @@ for dataset in datasets:
                 failed_inference.append(dataset_id)
 
             print(r[0].descriptor)
-            print()
-            print()
 
         completed.append(dataset_id)
     except:
@@ -497,7 +523,7 @@ for dataset in datasets:
 
             response = requests.get(generate_data_url(dataset_id))
             obj = io.BytesIO(response.content)
-            object_key = f"_datasets/.errors/{dataset_id}/{dataset_version}/dataset_{dataset_id}.tsv"
+            object_key = f"{datasets_prefix}/.errors/{dataset_id}/{dataset_version}/dataset_{dataset_id}.tsv"
 
             r = s3.put_object(Bucket=BUCKET_NAME, Key=object_key, Body=obj)
         except Exception as e:
