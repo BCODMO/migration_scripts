@@ -281,14 +281,14 @@ def move_already_existing_pipeline(
         f"{datasets_prefix}/{dataset_id}/{dataset_version}/{pipeline_spec_file_name}"
     )
 
-    r = s3.upload_to_s3(dp_path, dp_obj_key)
+    r = s3.meta.client.upload_to_s3(dp_path, dp_obj_key)
     print(r)
-    r = s3.upload_to_s3(path, pipeline_spec_obj_key)
+    r = s3.meta.client.upload_to_s3(path, pipeline_spec_obj_key)
     print(r)
 
     if move_data:
         print("Moving data also")
-        r = s3.upload_to_s3(data_path, res_filename)
+        r = s3.meta.client.upload_to_s3(data_path, res_filename)
         print(r)
     else:
         return False
