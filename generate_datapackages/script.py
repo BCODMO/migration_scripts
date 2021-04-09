@@ -37,8 +37,8 @@ dataset_ids = ["2472"]
 datasets_prefix = "_jgofs_1"
 # datasets_prefix = "_datasets"
 
-# BUCKET_NAME = "conrad-migration-test"
-BUCKET_NAME = "bcodmo.files"
+BUCKET_NAME = "conrad-migration-test"
+# BUCKET_NAME = "bcodmo.files"
 LAMINAR_DUMP_BUCKET = "laminar-dump"
 DATASETS_FILENAME = "datasets.csv"
 # the result of a sparql query getting all of the species columns
@@ -499,6 +499,7 @@ for dataset in datasets:
                 generate_pipeline = True
 
         if generate_pipeline:
+            continue
             r, inference_failed = generate_and_run_pipeline(
                 title,
                 dataset_id,
