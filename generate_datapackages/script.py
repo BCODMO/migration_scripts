@@ -96,7 +96,7 @@ with open(PIPELINE_SPECS_FILENAME, "r") as fp:
 
 
 def generate_data_url(dataset_id):
-    url = f"https://www.bco-dmo.org/dataset/{dataset_id}/data/download"
+    url = f"https://www.bco-dmo.org/dataset/{dataset_id}/data/download/tsv"
     return url
 
 
@@ -285,7 +285,9 @@ def move_already_existing_pipeline(
     r = s3.upload_file(path, BUCKET_NAME, pipeline_spec_obj_key)
 
     if move_data:
-        print("Moving data also")
+        data_obj_key = (
+            f"{datasets_prefix}/{dataset_id}/{dataset_version}/{res_filename}"
+        )
         r = s3.upload_file(data_path, BUCKET_NAME, res_filename)
     else:
         return False
@@ -526,7 +528,7 @@ for dataset in datasets:
             r = s3.put_object(Bucket=BUCKET_NAME, Key=object_key, Body=obj)
         except Exception as e:
             print(e)
-            print("ALSO FAILED SECOND DUMPING")
+            print("ALSO FAILED SECOND DUMPING", e)
             failed_second_dump.append(dataset_id)
 
     # TODO
