@@ -32,7 +32,7 @@ s3 = boto3.client("s3")
 
 dataset_ids = ["3300", "2292", "2291"]
 # dataset_ids = ["2295"]
-dataset_ids = ["2472"]
+dataset_ids = ["3293", "3292"]
 
 datasets_prefix = "_jgofs_1"
 # datasets_prefix = "_datasets"
@@ -52,7 +52,7 @@ PIPELINE_SPECS_FILENAME = "pipelines.txt"
 # Whether the dump to s3 step should be used
 ADD_DUMP = True
 # Whether the list of dataset_ids should be used instead of all datasets
-FILTER = False
+FILTER = True
 
 # SKIP_DATASETS = ["2321"]
 
