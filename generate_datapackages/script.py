@@ -498,7 +498,6 @@ for dataset in datasets:
                 generate_pipeline = True
 
         if generate_pipeline:
-            continue
             r, inference_failed = generate_and_run_pipeline(
                 title,
                 dataset_id,
@@ -527,7 +526,6 @@ for dataset in datasets:
 
             r = s3.put_object(Bucket=BUCKET_NAME, Key=object_key, Body=obj)
         except Exception as e:
-            print(e)
             print("ALSO FAILED SECOND DUMPING", e)
             failed_second_dump.append(dataset_id)
 
