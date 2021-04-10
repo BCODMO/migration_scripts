@@ -438,6 +438,7 @@ for dataset in datasets:
     if dataset_id in SKIP_DATASETS:
         failed_dump.append(dataset_id)
         failed_second_dump.append(dataset_id)
+        continue
 
     dataset_version = dataset[1]
     try:
