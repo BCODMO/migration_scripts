@@ -288,7 +288,7 @@ def move_already_existing_pipeline(
         data_obj_key = (
             f"{datasets_prefix}/{dataset_id}/{dataset_version}/{res_filename}"
         )
-        r = s3.upload_file(data_path, BUCKET_NAME, res_filename)
+        r = s3.upload_file(data_path, BUCKET_NAME, data_obj_key)
     else:
         return False
 
@@ -461,6 +461,8 @@ for dataset in datasets:
 
         url_type = dataset[2]
         title = dataset[4]
+        if title.endswith(".tsv"):
+            title = title[:-4]
 
         url = generate_data_url(dataset_id)
         if url_type != "Primary":
