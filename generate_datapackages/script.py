@@ -37,8 +37,8 @@ dataset_ids = ["3293", "3292"]
 datasets_prefix = "_jgofs_1"
 # datasets_prefix = "_datasets"
 
-BUCKET_NAME = "conrad-migration-test"
-# BUCKET_NAME = "bcodmo.files"
+# BUCKET_NAME = "conrad-migration-test"
+BUCKET_NAME = "bcodmo.files"
 LAMINAR_DUMP_BUCKET = "laminar-dump"
 DATASETS_FILENAME = "datasets.csv"
 # the result of a sparql query getting all of the species columns
