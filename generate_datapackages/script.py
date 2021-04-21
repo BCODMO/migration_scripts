@@ -37,8 +37,8 @@ dataset_ids = ["3293", "3292"]
 datasets_prefix = "_jgofs_1"
 # datasets_prefix = "_datasets"
 
-# BUCKET_NAME = "conrad-migration-test"
-BUCKET_NAME = "bcodmo.files"
+BUCKET_NAME = "conrad-migration-test"
+# BUCKET_NAME = "bcodmo.files"
 LAMINAR_DUMP_BUCKET = "laminar-dump"
 DATASETS_FILENAME = "datasets.csv"
 # the result of a sparql query getting all of the species columns
@@ -52,7 +52,7 @@ PIPELINE_SPECS_FILENAME = "pipelines.txt"
 # Whether the dump to s3 step should be used
 ADD_DUMP = True
 # Whether the list of dataset_ids should be used instead of all datasets
-FILTER = False
+FILTER = True
 
 # SKIP_DATASETS = ["2321"]
 
@@ -418,47 +418,41 @@ def generate_and_run_pipeline(
         raise e
 
 
-for dataset in datasets:
+if __name__ == "__main__":
 
-    if FILTER and dataset[0] not in dataset_ids:
-        continue
+    for dataset in datasets:
 
-    if counter > 0 and counter % 50 == 0:
-        print(f"Completed {counter} datasets of {len(datasets)}...")
-    counter += 1
+        if FILTER and dataset[0] not in dataset_ids:
+            continue
 
-    """
-    Set up the initial variables
-    """
-    dataset_id = dataset[0]
-    if dataset_id in completed:
-        repeated.append(dataset_id)
-        continue
+        if counter > 0 and counter % 50 == 0:
+            print(f"Completed {counter} datasets of {len(datasets)}...")
+        counter += 1
 
-    if dataset_id in SKIP_DATASETS:
-        failed_dump.append(dataset_id)
-        failed_second_dump.append(dataset_id)
-        continue
+        """
+        Set up the initial variables
+        """
+        dataset_id = dataset[0]
+        if dataset_id in completed:
+            repeated.append(dataset_id)
+            continue
 
-    dataset_version = dataset[1]
-    try:
-        int(dataset_version)
-    except:
-        dataset_version = "0"
-        false_versioned.append(dataset_id)
+        if dataset_id in SKIP_DATASETS:
+            failed_dump.append(dataset_id)
+            failed_second_dump.append(dataset_id)
+            continue
 
-    print()
-    print()
-    print()
-    print(f"Looking at {dataset_id}")
-    try:
+        dataset_version = dataset[1]
+        try:
+            int(dataset_version)
+        except:
+            dataset_version = "0"
+            false_versioned.append(dataset_id)
 
-        matched_pipeline_spec = find_pipeline_spec_match(dataset_id, dataset_version)
-        if matched_pipeline_spec:
-            found_pipeline.append(
-                {"dataset_id": dataset_id, "path": matched_pipeline_spec}
-            )
-
+        print()
+        print()
+        print()
+        print(f"Looking at {dataset_id}")
         url_type = dataset[2]
         title = dataset[4]
         if title.endswith(".tsv"):
@@ -468,111 +462,149 @@ for dataset in datasets:
         if url_type != "Primary":
             url = dataset[3]
 
-        """
-        Make the sparql queries to get lat_lon and species
-        """
-        lat, lon = get_latlon_fields(dataset_id)
-        species = get_species_fields(dataset_id)
-        unique_species = []
-        if len(species):
-            if dataset_id in ["2472"]:
-                # We skip this species for now
-                species = []
-            else:
-                df = download_data(url)
-                unique_species = get_unique_species(df, species)
+        try:
+            error.error()
 
-        generate_pipeline = not matched_pipeline_spec
-        if not generate_pipeline:
-            success = move_already_existing_pipeline(
-                matched_pipeline_spec,
-                title,
-                dataset_id,
-                dataset_version,
-                species,
-                unique_species,
-                lat,
-                lon,
+            matched_pipeline_spec = find_pipeline_spec_match(
+                dataset_id, dataset_version
             )
-            if not success:
-                failed_found_pipeline.append(
+            if matched_pipeline_spec:
+                found_pipeline.append(
                     {"dataset_id": dataset_id, "path": matched_pipeline_spec}
                 )
-                generate_pipeline = True
 
-        if generate_pipeline:
-            r, inference_failed = generate_and_run_pipeline(
-                title,
-                dataset_id,
-                dataset_version,
-                species,
-                unique_species,
-                lat,
-                lon,
-            )
+            """
+            Make the sparql queries to get lat_lon and species
+            """
+            lat, lon = get_latlon_fields(dataset_id)
+            species = get_species_fields(dataset_id)
+            unique_species = []
+            if len(species):
+                if dataset_id in ["2472"]:
+                    # We skip this species for now
+                    species = []
+                else:
+                    df = download_data(url)
+                    unique_species = get_unique_species(df, species)
 
-            if inference_failed:
-                print("Inference failed")
-                failed_inference.append(dataset_id)
+            generate_pipeline = not matched_pipeline_spec
+            if not generate_pipeline:
+                success = move_already_existing_pipeline(
+                    matched_pipeline_spec,
+                    title,
+                    dataset_id,
+                    dataset_version,
+                    species,
+                    unique_species,
+                    lat,
+                    lon,
+                )
+                if not success:
+                    failed_found_pipeline.append(
+                        {"dataset_id": dataset_id, "path": matched_pipeline_spec}
+                    )
+                    generate_pipeline = True
 
-            print(r[0].descriptor)
+            if generate_pipeline:
+                r, inference_failed = generate_and_run_pipeline(
+                    title,
+                    dataset_id,
+                    dataset_version,
+                    species,
+                    unique_species,
+                    lat,
+                    lon,
+                )
 
-        completed.append(dataset_id)
-    except Exception as e:
-        print("FAILED. Dumping to errors", e)
-        try:
-            failed_dump.append(dataset_id)
+                if inference_failed:
+                    print("Inference failed")
+                    failed_inference.append(dataset_id)
 
-            response = requests.get(generate_data_url(dataset_id))
-            obj = io.BytesIO(response.content)
-            object_key = f"{datasets_prefix}/.errors/{dataset_id}/{dataset_version}/dataset_{dataset_id}.tsv"
+                print(r[0].descriptor)
 
-            r = s3.put_object(Bucket=BUCKET_NAME, Key=object_key, Body=obj)
+            completed.append(dataset_id)
         except Exception as e:
-            print("ALSO FAILED SECOND DUMPING", e)
-            failed_second_dump.append(dataset_id)
+            print("FAILED. Manufacturing a datapackage", e)
+            try:
+                failed_dump.append(dataset_id)
 
-    # TODO
-    """"
-    - check if a dataset with a pipeline-spec & datapackage exists in laminar-dump/whoi server
-    - do a find for all pipeline-spec, filter that later to see if there is a pipeline-spec.yaml
-    - in embargo, if dataset_id has been seen before, ignore it
-    - create a dump_to_s3 step
+                response = requests.get(generate_data_url(dataset_id))
+                bytes_obj = io.BytesIO(response.content)
+                bytes_str = bytes_obj.read()
+                text_obj = bytes_str.decode("utf-8")
+                tab_obj = io.StringIO(text_obj)
+                tabin = csv.reader(tab_obj, dialect=csv.excel_tab)
+                str_obj = io.StringIO()
+                commaout = csv.writer(str_obj, dialect=csv.excel)
+                """
+                df = pd.read_csv(tabobj, sep="\t")
+                print(df)
+                print(obj, type(obj))
+                obj = df.to_csv(index=False).encode()
+                """
+                for row in tabin:
+                    commaout.writerow(row)
+
+                str_obj.seek(0)
+
+                obj = io.BytesIO(str_obj.read().encode("utf-8"))
+                bytes_obj.seek(0)
+
+                # Still dump to .errors
+                object_key = f"{datasets_prefix}/.errors/{dataset_id}/{dataset_version}/dataset_{dataset_id}.tsv"
+                r = s3.put_object(Bucket=BUCKET_NAME, Key=object_key, Body=bytes_obj)
+
+                object_key = (
+                    f"{datasets_prefix}/{dataset_id}/{dataset_version}/{title}.csv"
+                )
+                r = s3.put_object(Bucket=BUCKET_NAME, Key=object_key, Body=obj)
+
+                #
+            except Exception as e:
+                raise e
+                print("ALSO FAILED SECOND DUMPING", e)
+                failed_second_dump.append(dataset_id)
+
+        # TODO
+        """"
+        - check if a dataset with a pipeline-spec & datapackage exists in laminar-dump/whoi server
+        - do a find for all pipeline-spec, filter that later to see if there is a pipeline-spec.yaml
+        - in embargo, if dataset_id has been seen before, ignore it
+        - create a dump_to_s3 step
 
 
-    - run without infer types, (later need to implement hash compare)
-    -
+        - run without infer types, (later need to implement hash compare)
+        -
+        """
+
+    print(
+        f"""
+    Done!
+
+    {len(found_pipeline)} found pipeline-specs
+    {len(failed_found_pipeline)} failed found pipeline-specs
+    {len(failed_inference)} failed inference
+    {len(false_versioned)} false versions
+    {len(repeated)} repeated
+    {len(s3_and_local_different)} different between s3 and local
+    {len(s3_and_local_comparison_failed)} comparisons between s3 and local failed
+    {len(failed_dump)} failed dumps
+    {len(failed_second_dump)} failed second dumps
     """
-
-print(
-    f"""
-Done!
-
-{len(found_pipeline)} found pipeline-specs
-{len(failed_found_pipeline)} failed found pipeline-specs
-{len(failed_inference)} failed inference
-{len(false_versioned)} false versions
-{len(repeated)} repeated
-{len(s3_and_local_different)} different between s3 and local
-{len(s3_and_local_comparison_failed)} comparisons between s3 and local failed
-{len(failed_dump)} failed dumps
-{len(failed_second_dump)} failed second dumps
-"""
-)
-
-
-with open("output.json", "w") as fp:
-    json.dump(
-        {
-            "found_pipeline": found_pipeline,
-            "failed_found_pipeline": failed_found_pipeline,
-            "failed_inference": failed_inference,
-            "false_versioned": false_versioned,
-            "repeated": repeated,
-            "s3_and_local_different": s3_and_local_different,
-            "s3_and_local_comparison_failed": s3_and_local_comparison_failed,
-            "failed_dump": failed_dump,
-            "failed_second_dump": failed_second_dump,
-        },
-        fp,
     )
+
+    with open("output.json", "w") as fp:
+        json.dump(
+            {
+                "found_pipeline": found_pipeline,
+                "failed_found_pipeline": failed_found_pipeline,
+                "failed_inference": failed_inference,
+                "false_versioned": false_versioned,
+                "repeated": repeated,
+                "s3_and_local_different": s3_and_local_different,
+                "s3_and_local_comparison_failed": s3_and_local_comparison_failed,
+                "failed_dump": failed_dump,
+                "failed_second_dump": failed_second_dump,
+            },
+            fp,
+        )
