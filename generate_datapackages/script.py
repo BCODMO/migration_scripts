@@ -37,11 +37,11 @@ dataset_ids = ["3300", "2292", "2291"]
 dataset_ids = ["3293", "3292"]
 dataset_ids = ["3300", "2292", "2291", "2297", "822549"]
 
-datasets_prefix = "_jgofs_1"
+datasets_prefix = "_jgofs_2"
 # datasets_prefix = "_datasets"
 
-BUCKET_NAME = "conrad-migration-test"
-# BUCKET_NAME = "bcodmo.files"
+# BUCKET_NAME = "conrad-migration-test"
+BUCKET_NAME = "bcodmo.files"
 LAMINAR_DUMP_BUCKET = "laminar-dump"
 DATASETS_FILENAME = "datasets.csv"
 # the result of a sparql query getting all of the species columns
@@ -55,7 +55,7 @@ PIPELINE_SPECS_FILENAME = "pipelines.txt"
 # Whether the dump to s3 step should be used
 ADD_DUMP = True
 # Whether the list of dataset_ids should be used instead of all datasets
-FILTER = True
+FILTER = False
 
 # SKIP_DATASETS = ["2321"]
 
