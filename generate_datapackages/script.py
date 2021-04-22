@@ -546,7 +546,7 @@ if __name__ == "__main__":
 
             completed.append(dataset_id)
         except Exception as e:
-            print("FAILED. Manufacturing a datapackage", e)
+            print("FAILED. Manufacturing a datapackage and uploading", e)
             try:
                 failed_dump.append(dataset_id)
 
