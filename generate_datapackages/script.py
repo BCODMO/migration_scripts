@@ -8,6 +8,8 @@ import boto3
 boto3.set_stream_logger("", logging.CRITICAL)
 
 
+from datapackage import Package, Resource
+import hashlib
 import json
 import pandas as pd
 import csv
@@ -33,6 +35,7 @@ s3 = boto3.client("s3")
 dataset_ids = ["3300", "2292", "2291"]
 # dataset_ids = ["2295"]
 dataset_ids = ["3293", "3292"]
+dataset_ids = ["3300", "2292", "2291", "2297", "822549"]
 
 datasets_prefix = "_jgofs_1"
 # datasets_prefix = "_datasets"
@@ -198,6 +201,7 @@ failed_second_dump = []
 def move_already_existing_pipeline(
     path, title, dataset_id, dataset_version, species, unique_species, lat, lon
 ):
+    print(path)
     dp_path = path.replace("pipeline-spec.yaml", "datapackage.json")
     move_data = True
     try:
@@ -215,6 +219,7 @@ def move_already_existing_pipeline(
     data_path = path.replace("pipeline-spec.yaml", res_filename)
 
     # Here we confirm that the files are the same on the server as on s3
+    file_hash = None
     with open(path, "r") as pipeline_spec_file:
         pipeline_str = "".join(pipeline_spec_file.readlines())
         if (
@@ -231,6 +236,9 @@ def move_already_existing_pipeline(
 
                 with open(data_path, "r") as local_f:
                     local_str = local_f.read()
+                    m = hashlib.md5()
+                    m.update(local_str.encode("utf-8"))
+                    file_hash = m.hexdigest()
                     if local_str != s3_str:
                         print("NOT THE SAME BETWEEN S3 AND LOCAL")
                         move_data = False
@@ -241,7 +249,7 @@ def move_already_existing_pipeline(
                                 "path": path,
                             }
                         )
-            except:
+            except Exception as e:
                 move_data = False
                 s3_and_local_comparison_failed.append(
                     {"dataset_id": dataset_id, "s3_key": object_key, "path": path}
@@ -272,16 +280,29 @@ def move_already_existing_pipeline(
     if move_data:
         dp_file_name = "datapackage.json"
         pipeline_spec_file_name = "pipeline-spec.yaml"
+        assert file_hash is not None
+        dp["resources"][0]["hash"] = file_hash
+        if "bcodmo:" in dp and dp["bcodmo:"].get("submissionId", None) == False:
+            dp["bcodmo:"]["submissionId"] = None
     else:
         dp_file_name = "_preserved_datapackage.json"
         pipeline_spec_file_name = "_preserved_pipeline-spec.yaml"
+        if file_hash is not None:
+            dp["resources"][0]["hash"] = file_hash
 
     dp_obj_key = f"{datasets_prefix}/{dataset_id}/{dataset_version}/{dp_file_name}"
     pipeline_spec_obj_key = (
         f"{datasets_prefix}/{dataset_id}/{dataset_version}/{pipeline_spec_file_name}"
     )
 
-    r = s3.upload_file(dp_path, BUCKET_NAME, dp_obj_key)
+    # We put the object instead of the file because we've updated the hash in the datapackage to reflect the actual hash of the file
+    r = s3.put_object(
+        Bucket=BUCKET_NAME,
+        Key=dp_obj_key,
+        Body=io.BytesIO(
+            json.dumps(dp, indent=2, sort_keys=True, ensure_ascii=False).encode()
+        ),
+    )
     r = s3.upload_file(path, BUCKET_NAME, pipeline_spec_obj_key)
 
     if move_data:
@@ -462,8 +483,8 @@ if __name__ == "__main__":
         if url_type != "Primary":
             url = dataset[3]
 
+        lat, lon, species, unique_species = (None, None, None, None)
         try:
-            error.error()
 
             matched_pipeline_spec = find_pipeline_spec_match(
                 dataset_id, dataset_version
@@ -486,6 +507,7 @@ if __name__ == "__main__":
                 else:
                     df = download_data(url)
                     unique_species = get_unique_species(df, species)
+            url().test()
 
             generate_pipeline = not matched_pipeline_spec
             if not generate_pipeline:
@@ -532,17 +554,20 @@ if __name__ == "__main__":
                 bytes_obj = io.BytesIO(response.content)
                 bytes_str = bytes_obj.read()
                 text_obj = bytes_str.decode("utf-8")
+                bytes_str = None
                 tab_obj = io.StringIO(text_obj)
+                text_obj = None
                 tabin = csv.reader(tab_obj, dialect=csv.excel_tab)
                 str_obj = io.StringIO()
                 commaout = csv.writer(str_obj, dialect=csv.excel)
-                """
-                df = pd.read_csv(tabobj, sep="\t")
-                print(df)
-                print(obj, type(obj))
-                obj = df.to_csv(index=False).encode()
-                """
+                fields = None
                 for row in tabin:
+                    if not fields:
+                        fields = [
+                            {"format": "default", "type": "string", "name": v}
+                            for v in row
+                        ]
+
                     commaout.writerow(row)
 
                 str_obj.seek(0)
@@ -550,14 +575,85 @@ if __name__ == "__main__":
                 obj = io.BytesIO(str_obj.read().encode("utf-8"))
                 bytes_obj.seek(0)
 
+                m = hashlib.md5()
+                f = obj.read()
+                m.update(f)
+                h = m.hexdigest()
+                num_bytes = len(f)
+                f = None
+                obj.seek(0)
+
                 # Still dump to .errors
                 object_key = f"{datasets_prefix}/.errors/{dataset_id}/{dataset_version}/dataset_{dataset_id}.tsv"
                 r = s3.put_object(Bucket=BUCKET_NAME, Key=object_key, Body=bytes_obj)
 
-                object_key = (
-                    f"{datasets_prefix}/{dataset_id}/{dataset_version}/{title}.csv"
-                )
+                dump_path = f"{datasets_prefix}/{dataset_id}/{dataset_version}"
+                object_key = f"{dump_path}/{title}.csv"
+                dp_object_key = f"{dump_path}/datapackage.json"
                 r = s3.put_object(Bucket=BUCKET_NAME, Key=object_key, Body=obj)
+
+                resource_specific_metadata = {}
+                if lat and lon:
+                    resource_specific_metadata["lat_column"] = lat
+                    resource_specific_metadata["lon_column"] = lon
+                if species and len(species) and unique_species and len(unique_species):
+                    for field in fields:
+                        try:
+                            i = species.index(field["name"])
+                        except:
+                            continue
+                        field["bcodmo:"] = {
+                            "unique": unique_species[i],
+                        }
+
+                dp = Package(
+                    descriptor={
+                        "bcodmo:": {
+                            "dataManager": {
+                                "name": "",
+                                "orcid": "",
+                                "submission_id": "",
+                            },
+                            "submissionId": None,
+                        },
+                        "dump_bucket": BUCKET_NAME,
+                        "dump_path": dump_path,
+                        "id": dataset_id,
+                        "resources": [
+                            {
+                                "path": f"{title}.csv",
+                                "profile": "data-resource",
+                                "name": title,
+                                "mediatype": "text/csv",
+                                "hash": h,
+                                "encoding": "utf-8",
+                                "format": "csv",
+                                "bytes": num_bytes,
+                                "dialect": {
+                                    "delimiter": ",",
+                                    "doubleQuote": True,
+                                    "lineTerminator": "\r\n",
+                                    "quoteChar": '"',
+                                    "skipInitialSpace": False,
+                                },
+                                "bcodmo:": resource_specific_metadata,
+                                "schema": {
+                                    "fields": fields,
+                                    "missingValues": [],
+                                },
+                            }
+                        ],
+                    }
+                )
+                r = s3.put_object(
+                    Bucket=BUCKET_NAME,
+                    Key=dp_object_key,
+                    Body=io.BytesIO(
+                        json.dumps(
+                            dp.descriptor, indent=2, sort_keys=True, ensure_ascii=False
+                        ).encode()
+                    ),
+                )
 
                 #
             except Exception as e:
