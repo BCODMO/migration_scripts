@@ -41,7 +41,7 @@ with open(PIPELINE_SPECS_FILENAME, "r") as fp:
         line = line.strip("\n\r")
         if not line.endswith("pipeline-spec.yaml"):
             continue
-        pipeline_specs_list.append(line.read())
+        pipeline_specs_list.append(line)
 
 final_list = []
 counter = 0
@@ -61,4 +61,4 @@ for pipeline_path in pipeline_specs_list:
     counter += 1
 
 with open("dump.json", "w") as fp:
-    json.dump(fp, final_list)
+    json.dump(final_list, fp)
