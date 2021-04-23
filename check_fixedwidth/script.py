@@ -41,7 +41,7 @@ with open(PIPELINE_SPECS_FILENAME, "r") as fp:
         line = line.strip("\n\r")
         if not line.endswith("pipeline-spec.yaml"):
             continue
-        pipeline_specs_list.append(line)
+        pipeline_specs_list.append(line.read())
 
 final_list = []
 counter = 0
