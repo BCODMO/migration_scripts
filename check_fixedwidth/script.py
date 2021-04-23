@@ -46,7 +46,7 @@ with open(PIPELINE_SPECS_FILENAME, "r") as fp:
 final_list = []
 counter = 0
 for pipeline_path in pipeline_specs_list:
-    if counter % 50:
+    if counter % 50 == 0:
         print(f"Completed {counter} of {len(pipeline_specs_list)}")
     try:
         with open(pipeline_path, "r") as pipeline_spec_file:
