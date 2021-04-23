@@ -60,5 +60,5 @@ for pipeline_path in pipeline_specs_list:
         print("Skipping", pipeline_path)
     counter += 1
 
-with open("dump.json", "rw") as fp:
+with open("dump.json", "w") as fp:
     json.dump(fp, final_list)
