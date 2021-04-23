@@ -44,14 +44,21 @@ with open(PIPELINE_SPECS_FILENAME, "r") as fp:
         pipeline_specs_list.append(line)
 
 final_list = []
+counter = 0
 for pipeline_path in pipeline_specs_list:
-    with open(pipeline_path, "r") as pipeline_spec_file:
-        pipeline_str = "".join(pipeline_spec_file.readlines())
-        if (
-            "format: bcodmo-fixedwidth" in pipeline_str
-            and "infer: true" in pipeline_str
-        ):
-            final_list.append(pipeline_path)
+    if counter % 50:
+        print(f"Completed {counter} of {len(pipeline_specs_list)}")
+    try:
+        with open(pipeline_path, "r") as pipeline_spec_file:
+            pipeline_str = "".join(pipeline_spec_file.readlines())
+            if (
+                "format: bcodmo-fixedwidth" in pipeline_str
+                and "infer: true" in pipeline_str
+            ):
+                final_list.append(pipeline_path)
+    except:
+        print("Skipping", pipeline_path)
+    counter += 1
 
 with open("dump.json", "rw") as fp:
     json.dump(fp, final_list)
