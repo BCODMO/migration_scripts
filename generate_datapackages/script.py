@@ -656,7 +656,6 @@ if __name__ == "__main__":
 
                 #
             except Exception as e:
-                raise e
                 print("ALSO FAILED SECOND DUMPING", e)
                 failed_second_dump.append(dataset_id)
 
