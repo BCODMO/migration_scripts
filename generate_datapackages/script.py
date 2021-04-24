@@ -507,7 +507,6 @@ if __name__ == "__main__":
                 else:
                     df = download_data(url)
                     unique_species = get_unique_species(df, species)
-            url().test()
 
             generate_pipeline = not matched_pipeline_spec
             if not generate_pipeline:
