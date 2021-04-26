@@ -36,6 +36,7 @@ dataset_ids = ["3300", "2292", "2291"]
 # dataset_ids = ["2295"]
 dataset_ids = ["3293", "3292"]
 dataset_ids = ["3300", "2292", "2291", "2297", "822549"]
+dataset_ids = ["786098"]
 
 datasets_prefix = "_jgofs_2"
 # datasets_prefix = "_datasets"
@@ -55,7 +56,7 @@ PIPELINE_SPECS_FILENAME = "pipelines.txt"
 # Whether the dump to s3 step should be used
 ADD_DUMP = True
 # Whether the list of dataset_ids should be used instead of all datasets
-FILTER = False
+FILTER = True
 
 # SKIP_DATASETS = ["2321"]
 
@@ -545,6 +546,7 @@ if __name__ == "__main__":
 
             completed.append(dataset_id)
         except Exception as e:
+            raise e
             print("FAILED. Manufacturing a datapackage and uploading", e)
             try:
                 failed_dump.append(dataset_id)
