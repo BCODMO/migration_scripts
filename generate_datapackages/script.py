@@ -192,7 +192,7 @@ false_versioned = []
 repeated = []
 found_pipeline = []
 failed_inference = []
-failed_found_pipeline = []
+failed_move_pipeline = []
 s3_and_local_different = []
 s3_and_local_comparison_failed = []
 failed_dump = []
@@ -523,7 +523,7 @@ if __name__ == "__main__":
                     lon,
                 )
                 if not success:
-                    failed_found_pipeline.append(
+                    failed_move_pipeline.append(
                         {"dataset_id": dataset_id, "path": matched_pipeline_spec}
                     )
                     generate_pipeline = True
@@ -679,7 +679,7 @@ if __name__ == "__main__":
     Done!
 
     {len(found_pipeline)} found pipeline-specs
-    {len(failed_found_pipeline)} failed found pipeline-specs
+    {len(failed_move_pipeline)} failed found pipeline-specs
     {len(failed_inference)} failed inference
     {len(false_versioned)} false versions
     {len(repeated)} repeated
@@ -694,7 +694,7 @@ if __name__ == "__main__":
         json.dump(
             {
                 "found_pipeline": found_pipeline,
-                "failed_found_pipeline": failed_found_pipeline,
+                "failed_move_pipeline": failed_move_pipeline,
                 "failed_inference": failed_inference,
                 "false_versioned": false_versioned,
                 "repeated": repeated,
