@@ -42,7 +42,7 @@ datasets_prefix = "_jgofs_2"
 # datasets_prefix = "_datasets"
 
 BUCKET_NAME = "conrad-migration-test"
-#BUCKET_NAME = "bcodmo.files"
+# BUCKET_NAME = "bcodmo.files"
 LAMINAR_DUMP_BUCKET = "laminar-dump"
 DATASETS_FILENAME = "datasets.csv"
 # the result of a sparql query getting all of the species columns
@@ -258,6 +258,7 @@ def move_already_existing_pipeline(
 
         else:
             print("Skipping the diff because this file wasn't dumped with dump_to_s3")
+            move_data = False
 
     # add unique species to dp
     if len(species):
