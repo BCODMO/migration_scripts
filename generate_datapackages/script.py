@@ -56,7 +56,7 @@ PIPELINE_SPECS_FILENAME = "pipelines.txt"
 # Whether the dump to s3 step should be used
 ADD_DUMP = True
 # Whether the list of dataset_ids should be used instead of all datasets
-# FILTER = True
+FILTER = False
 
 # SKIP_DATASETS = ["2321"]
 
