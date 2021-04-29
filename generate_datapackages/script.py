@@ -61,7 +61,7 @@ FILTER = False
 # SKIP_DATASETS = ["2321"]
 
 # Skipping 555780 because it is 18GB
-SKIP_DATASETS = ["555780"]
+SKIP_DATASETS = ["555780", "3747", "3458"]]
 
 
 def extract_dataset_id(url):
@@ -197,6 +197,7 @@ s3_and_local_different = []
 s3_and_local_comparison_failed = []
 failed_dump = []
 failed_second_dump = []
+failed_third_dump = []
 
 
 def move_already_existing_pipeline(
@@ -463,6 +464,7 @@ if __name__ == "__main__":
         if dataset_id in SKIP_DATASETS:
             failed_dump.append(dataset_id)
             failed_second_dump.append(dataset_id)
+            failed_third_dump.append(dataset_id)
             continue
 
         dataset_version = dataset[1]
@@ -584,9 +586,6 @@ if __name__ == "__main__":
                 f = None
                 obj.seek(0)
 
-                # Still dump to .errors
-                object_key = f"{datasets_prefix}/.errors/{dataset_id}/{dataset_version}/dataset_{dataset_id}.tsv"
-                r = s3.put_object(Bucket=BUCKET_NAME, Key=object_key, Body=bytes_obj)
 
                 dump_path = f"{datasets_prefix}/{dataset_id}/{dataset_version}"
                 object_key = f"{dump_path}/{title}.csv"
@@ -658,8 +657,17 @@ if __name__ == "__main__":
 
                 #
             except Exception as e:
-                print("ALSO FAILED SECOND DUMPING", e)
-                failed_second_dump.append(dataset_id)
+                print("ALSO FAILED SECOND DUMPING. Dump to .errors", e)
+                try:
+                    failed_second_dump.append(dataset_id)
+                    # Still dump to .errors
+                    response = requests.get(generate_data_url(dataset_id))
+                    bytes_obj = io.BytesIO(response.content)
+                    object_key = f"{datasets_prefix}/.errors/{dataset_id}/{dataset_version}/dataset_{dataset_id}.tsv"
+                    r = s3.put_object(Bucket=BUCKET_NAME, Key=object_key, Body=bytes_obj)
+                except Exception as e:
+                    print("ALSO FAILED THIRD DUMPING. Dump to .errors", e)
+                    failed_third_dump.append(dataset_id)
 
         # TODO
         """"
@@ -686,6 +694,7 @@ if __name__ == "__main__":
     {len(s3_and_local_comparison_failed)} comparisons between s3 and local failed
     {len(failed_dump)} failed dumps
     {len(failed_second_dump)} failed second dumps
+    {len(failed_third_dump)} failed third dumps
     """
     )
 
@@ -701,6 +710,7 @@ if __name__ == "__main__":
                 "s3_and_local_comparison_failed": s3_and_local_comparison_failed,
                 "failed_dump": failed_dump,
                 "failed_second_dump": failed_second_dump,
+                "failed_third_dump": failed_third_dump,
             },
             fp,
         )
