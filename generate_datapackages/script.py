@@ -61,7 +61,7 @@ FILTER = False
 # SKIP_DATASETS = ["2321"]
 
 # Skipping 555780 because it is 18GB
-SKIP_DATASETS = ["555780", "3747", "3458"]]
+SKIP_DATASETS = ["555780", "3747", "3458"]
 
 
 def extract_dataset_id(url):
