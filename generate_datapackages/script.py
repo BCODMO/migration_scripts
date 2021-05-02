@@ -61,7 +61,7 @@ FILTER = False
 # SKIP_DATASETS = ["2321"]
 
 # Skipping 555780 because it is 18GB
-SKIP_DATASETS = ["555780", "3747", "3458"]
+SKIP_DATASETS = ["555780", "3747", "3458", "734541"]
 
 
 def extract_dataset_id(url):
@@ -586,7 +586,6 @@ if __name__ == "__main__":
                 f = None
                 obj.seek(0)
 
-
                 dump_path = f"{datasets_prefix}/{dataset_id}/{dataset_version}"
                 object_key = f"{dump_path}/{title}.csv"
                 dp_object_key = f"{dump_path}/datapackage.json"
@@ -664,7 +663,9 @@ if __name__ == "__main__":
                     response = requests.get(generate_data_url(dataset_id))
                     bytes_obj = io.BytesIO(response.content)
                     object_key = f"{datasets_prefix}/.errors/{dataset_id}/{dataset_version}/dataset_{dataset_id}.tsv"
-                    r = s3.put_object(Bucket=BUCKET_NAME, Key=object_key, Body=bytes_obj)
+                    r = s3.put_object(
+                        Bucket=BUCKET_NAME, Key=object_key, Body=bytes_obj
+                    )
                 except Exception as e:
                     print("ALSO FAILED THIRD DUMPING. Dump to .errors", e)
                     failed_third_dump.append(dataset_id)
