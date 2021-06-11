@@ -72,6 +72,7 @@ RUN_ON_AWS = True
 # Running server locally, could use actual laminar server if needed
 # You'll need to update the configured bucket (local or on the server, depending on your usage)
 LAMINAR_URL = "http://0.0.0.0:5300/pipeline"
+LAMINAR_URL = "https://staging-laminar.bco-dmo.org/"
 
 
 def extract_dataset_id(url):
