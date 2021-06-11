@@ -42,7 +42,7 @@ dataset_ids = ["3579"]
 
 dataset_ids = ["3300", "2292", "2291"]
 
-datasets_prefix = "_jgofs_2"
+datasets_prefix = "_jgofs_3"
 # datasets_prefix = "_datasets"
 
 # BUCKET_NAME = "conrad-migration-test"
@@ -60,7 +60,7 @@ PIPELINE_SPECS_FILENAME = "pipelines.txt"
 # Whether the dump to s3 step should be used
 ADD_DUMP = True
 # Whether the list of dataset_ids should be used instead of all datasets
-FILTER = True
+FILTER = False
 
 # SKIP_DATASETS = ["2321"]
 
