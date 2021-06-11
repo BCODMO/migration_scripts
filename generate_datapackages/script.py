@@ -37,6 +37,10 @@ dataset_ids = ["3300", "2292", "2291"]
 dataset_ids = ["3293", "3292"]
 dataset_ids = ["3300", "2292", "2291", "2297", "822549"]
 dataset_ids = ["786098"]
+dataset_ids = ["556371"]
+dataset_ids = ["3579"]
+
+dataset_ids = ["3300", "2292", "2291"]
 
 datasets_prefix = "_jgofs_2"
 # datasets_prefix = "_datasets"
@@ -56,12 +60,18 @@ PIPELINE_SPECS_FILENAME = "pipelines.txt"
 # Whether the dump to s3 step should be used
 ADD_DUMP = True
 # Whether the list of dataset_ids should be used instead of all datasets
-FILTER = False
+FILTER = True
 
 # SKIP_DATASETS = ["2321"]
 
 # Skipping 555780 because it is 18GB
 SKIP_DATASETS = ["555780", "3747", "3458", "734541"]
+
+# For running the pipeline on a AWS fargate worker
+RUN_ON_AWS = True
+# Running server locally, could use actual laminar server if needed
+# You'll need to update the configured bucket (local or on the server, depending on your usage)
+LAMINAR_URL = "http://0.0.0.0:5300/pipeline"
 
 
 def extract_dataset_id(url):
@@ -416,15 +426,61 @@ def generate_and_run_pipeline(
 
             steps[-1]["parameters"]["pipeline_spec"] = pipeline_spec_str
 
-        flow_params = []
-        for step in steps:
-            processor = processor_to_func[step["run"]]
+        if RUN_ON_AWS:
+            res = requests.post(
+                f"{LAMINAR_URL}/run",
+                json={
+                    "verbose": True,
+                    "preserve_missing_values": False,
+                    "metadata": {
+                        "title": title,
+                        "version": "v2.10.2",
+                        "datasetId": dataset_id,
+                        "datasetVersion": dataset_version,
+                    },
+                    "steps": steps,
+                },
+                headers={
+                    # You can grab this value in the headers of a laminar request
+                    "X-Laminar-Orcid-Id-Token": os.environ.get("ORCID_ID_TOKEN"),
+                },
+            )
+            res = res.json()
+            cache_id = res["cache_id"]
 
-            flow_params.append(processor(step["parameters"]))
+            counter = 1
+            while True:
+                res = requests.get(
+                    f"{LAMINAR_URL}/status",
+                    params={"cache_id": cache_id},
+                    headers={
+                        # You can grab this value in the headers of a laminar request
+                        "X-Laminar-Orcid-Id-Token": os.environ.get("ORCID_ID_TOKEN"),
+                    },
+                )
+                res = res.json()
+                print(res)
+                if res["pipeline_status"] != "SENT":
+                    if res["error"]:
+                        raise Exception(res["error"])
+                    print("Success!", res)
+                    break
+                time.sleep(1 * counter)
+                if counter < 5:
+                    counter += 1
+            exit()
+            pass
 
-        r = Flow(
-            *flow_params,
-        ).process()
+        else:
+            flow_params = []
+            for step in steps:
+                processor = processor_to_func[step["run"]]
+
+                flow_params.append(processor(step["parameters"]))
+
+            r = Flow(
+                *flow_params,
+            ).process()
         return r, retry
 
     except ProcessorError as e:
@@ -560,7 +616,9 @@ if __name__ == "__main__":
                 bytes_str = None
                 tab_obj = io.StringIO(text_obj)
                 text_obj = None
-                tabin = csv.reader(tab_obj, dialect=csv.excel_tab)
+                tabin = csv.reader(
+                    tab_obj, dialect=csv.excel_tab, quoting=csv.QUOTE_NONE
+                )
                 str_obj = io.StringIO()
                 commaout = csv.writer(str_obj, dialect=csv.excel)
                 fields = None
