@@ -41,6 +41,30 @@ dataset_ids = ["556371"]
 dataset_ids = ["3579"]
 
 dataset_ids = ["3300", "2292", "2291"]
+dataset_ids = [
+    "2321",
+    "2341",
+    "2472",
+    "2781",
+    "2922",
+    "3285",
+    "3395",
+    "3507",
+    "3552",
+    "3579",
+    "3744",
+    "3758",
+    "472104",
+    "546723",
+    "556371",
+    "616042",
+    "636127",
+    "658729",
+    "684453",
+    "715706",
+    "718675",
+    "724355",
+]
 
 datasets_prefix = "_jgofs_3"
 # datasets_prefix = "_datasets"
@@ -60,7 +84,7 @@ PIPELINE_SPECS_FILENAME = "pipelines.txt"
 # Whether the dump to s3 step should be used
 ADD_DUMP = True
 # Whether the list of dataset_ids should be used instead of all datasets
-FILTER = False
+FILTER = True
 
 # SKIP_DATASETS = ["2321"]
 
@@ -68,7 +92,7 @@ FILTER = False
 SKIP_DATASETS = ["555780", "3747", "3458", "734541"]
 
 # For running the pipeline on a AWS fargate worker
-RUN_ON_AWS = True
+RUN_ON_AWS = False
 # Running server locally, could use actual laminar server if needed
 # You'll need to update the configured bucket (local or on the server, depending on your usage)
 LAMINAR_URL = "http://0.0.0.0:5300/pipeline"
