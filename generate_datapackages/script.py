@@ -66,7 +66,7 @@ dataset_ids = [
     "724355",
 ]
 
-datasets_prefix = "_jgofs_3"
+datasets_prefix = "datasets"
 # datasets_prefix = "_datasets"
 
 # BUCKET_NAME = "conrad-migration-test"
@@ -84,12 +84,12 @@ PIPELINE_SPECS_FILENAME = "pipelines.txt"
 # Whether the dump to s3 step should be used
 ADD_DUMP = True
 # Whether the list of dataset_ids should be used instead of all datasets
-FILTER = True
+FILTER = False
 
 # SKIP_DATASETS = ["2321"]
 
 # Skipping 555780 because it is 18GB
-SKIP_DATASETS = ["555780", "3747", "3458", "734541"]
+SKIP_DATASETS = ["555780", "3747", "3458", "734541", "3744"]
 
 # For running the pipeline on a AWS fargate worker
 RUN_ON_AWS = False
