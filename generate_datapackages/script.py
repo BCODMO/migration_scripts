@@ -84,19 +84,24 @@ PIPELINE_SPECS_FILENAME = "pipelines.txt"
 # Whether the dump to s3 step should be used
 ADD_DUMP = True
 # Whether the list of dataset_ids should be used instead of all datasets
-FILTER = False
+FILTER = True
 
 # SKIP_DATASETS = ["2321"]
 
 # Skipping 555780 because it is 18GB
-SKIP_DATASETS = ["555780", "3747", "3458", "734541", "3744"]
+dataset_ids = ["555780", "734541", "3458"]  # ,  "3744"]
+dataset_ids = ["3458"]  # "3458",  "3744"]
+# 3458 failed with field too large, amber fixed and now it's too large
+# 3744 seems to have dumped
+# 3747 definitely done
+SKIP_DATASETS = []  # ["555780", "3747", "3458", "734541", "3744"]
 
 # For running the pipeline on a AWS fargate worker
-RUN_ON_AWS = False
+RUN_ON_AWS = True
 # Running server locally, could use actual laminar server if needed
 # You'll need to update the configured bucket (local or on the server, depending on your usage)
 LAMINAR_URL = "http://0.0.0.0:5300/pipeline"
-LAMINAR_URL = "https://staging-laminar-api.bco-dmo.org/pipeline"
+# LAMINAR_URL = "https://staging-laminar-api.bco-dmo.org/pipeline"
 
 
 def extract_dataset_id(url):
@@ -464,6 +469,7 @@ def generate_and_run_pipeline(
                         "datasetVersion": dataset_version,
                     },
                     "steps": steps,
+                    "run_big_worker": True,
                 },
                 headers={
                     # You can grab this value in the headers of a laminar request
@@ -493,8 +499,6 @@ def generate_and_run_pipeline(
                 time.sleep(1 * counter)
                 if counter < 5:
                     counter += 1
-            exit()
-            pass
 
         else:
             flow_params = []
@@ -503,10 +507,10 @@ def generate_and_run_pipeline(
 
                 flow_params.append(processor(step["parameters"]))
 
-            r = Flow(
+            res = Flow(
                 *flow_params,
             ).process()
-        return r, retry
+        return res, retry
 
     except ProcessorError as e:
         if not retry:
@@ -567,7 +571,8 @@ if __name__ == "__main__":
         url = generate_data_url(dataset_id)
         if url_type != "Primary":
             url = dataset[3]
-
+        print("URL", url)
+        # continue
         lat, lon, species, unique_species = (None, None, None, None)
         try:
 
@@ -590,8 +595,9 @@ if __name__ == "__main__":
                     # We skip this species for now
                     species = []
                 else:
-                    df = download_data(url)
-                    unique_species = get_unique_species(df, species)
+                    species = []
+                    # df = download_data(url)
+                    # unique_species = get_unique_species(df, species)
 
             generate_pipeline = not matched_pipeline_spec
             if not generate_pipeline:
@@ -631,6 +637,7 @@ if __name__ == "__main__":
             completed.append(dataset_id)
         except Exception as e:
             print("FAILED. Manufacturing a datapackage and uploading", e)
+            continue
             try:
                 failed_dump.append(dataset_id)
 
