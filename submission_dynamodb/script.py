@@ -79,13 +79,13 @@ def put_dps(
         response = ddb.put_item(
             TableName=ddb_table,
             Item={
-                "Type": {
+                "ObjectType": {
                     "S": t,
                 },
                 "Updated": {
                     "N": str(obj["updated"]),
                 },
-                "State": {
+                "ObjectState": {
                     "S": obj["state"],
                 },
                 "ObjectId": {
