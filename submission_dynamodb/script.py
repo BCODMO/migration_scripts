@@ -1,4 +1,5 @@
 import json
+from fnvhash import fnv1a_32
 import dateutil.parser
 import datetime
 import boto3
@@ -7,7 +8,7 @@ import os
 
 
 def put_dps(
-    s3_endpoint, s3_access_key, s3_secret_key, s3_bucket, ddb_endpoint, ddb_table
+    s3_endpoint, s3_access_key, s3_secret_key, s3_bucket, ddb_endpoint, ddb_table, t
 ):
     session = boto3.session.Session()
 
@@ -26,10 +27,13 @@ def put_dps(
     while isTruncated:
         if continuationToken:
             response = s3_client.list_objects_v2(
-                Bucket=bucket, ContinuationToken=continuationToken,
+                Bucket=bucket,
+                ContinuationToken=continuationToken,
             )
         else:
-            response = s3_client.list_objects_v2(Bucket=bucket,)
+            response = s3_client.list_objects_v2(
+                Bucket=bucket,
+            )
         isTruncated = response["IsTruncated"]
         continuationToken = response.get("ContinuationToken", None)
 
@@ -40,21 +44,30 @@ def put_dps(
 
     toBeAdded = []
     for key in allDps:
-        response = s3_client.get_object(Bucket=bucket, Key=key,)
+        response = s3_client.get_object(
+            Bucket=bucket,
+            Key=key,
+        )
         dp = json.load(response["Body"])
 
         deleted = dp.get("bcodmo:", {}).get("deleted", False)
         if not deleted:
             state = dp.get("bcodmo:", {}).get("state", "")
-            updated = dp.get("updated", "")
-            if not updated:
+            objectId = key.strip("/datapackage.json")
+            updatedStr = dp.get("updated", "")
+            if not updatedStr:
                 raise Exception("UPDATED NOT FOUND", key)
 
-            updatedDate = dateutil.parser.isoparse(updated)
+            updatedDate = dateutil.parser.isoparse(updatedStr)
+            updated = (
+                str(int(updatedDate.timestamp()))
+                + "."
+                + str(fnv1a_32(bytes(objectId, encoding="utf-8")))
+            )
             toBeAdded.append(
                 {
-                    "objectId": key.strip("/datapackage.json"),
-                    "updated": updatedDate.timestamp(),
+                    "objectId": objectId,
+                    "updated": updated,
                     "state": state,
                 }
             )
@@ -66,14 +79,25 @@ def put_dps(
         response = ddb.put_item(
             TableName=ddb_table,
             Item={
-                "ObjectId": {"S": obj["objectId"],},
-                "Updated": {"N": str(obj["updated"]),},
-                "State": {"S": obj["state"],},
+                "Type": {
+                    "S": t,
+                },
+                "Updated": {
+                    "N": str(obj["updated"]),
+                },
+                "State": {
+                    "S": obj["state"],
+                },
+                "ObjectId": {
+                    "S": obj["objectId"],
+                },
             },
         )
     print("Scanning...")
 
-    response = ddb.scan(TableName=ddb_table,)
+    response = ddb.scan(
+        TableName=ddb_table,
+    )
     for item in response["Items"]:
         print(item)
 
@@ -85,7 +109,8 @@ put_dps(
     os.environ.get("MINIO_SECRET_KEY"),
     os.environ.get("MINIO_SUBMISSIONS_BUCKET"),
     os.environ.get("DDB_ENDPOINT"),
-    os.environ.get("DDB_TABLE_SUBMISSIONS"),
+    os.environ.get("DDB_TABLE"),
+    "submission",
 )
 # Projects
 put_dps(
@@ -94,5 +119,6 @@ put_dps(
     os.environ.get("MINIO_SECRET_KEY"),
     os.environ.get("MINIO_PROJECTS_BUCKET"),
     os.environ.get("DDB_ENDPOINT"),
-    os.environ.get("DDB_TABLE_PROJECTS"),
+    os.environ.get("DDB_TABLE"),
+    "project",
 )
