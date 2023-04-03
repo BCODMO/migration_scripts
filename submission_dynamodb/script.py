@@ -27,13 +27,10 @@ def put_dps(
     while isTruncated:
         if continuationToken:
             response = s3_client.list_objects_v2(
-                Bucket=bucket,
-                ContinuationToken=continuationToken,
+                Bucket=bucket, ContinuationToken=continuationToken,
             )
         else:
-            response = s3_client.list_objects_v2(
-                Bucket=bucket,
-            )
+            response = s3_client.list_objects_v2(Bucket=bucket,)
         isTruncated = response["IsTruncated"]
         continuationToken = response.get("ContinuationToken", None)
 
@@ -41,19 +38,17 @@ def put_dps(
             key = obj["Key"]
             if p.match(key):
                 allDps.append(key)
+    print(sorted(allDps))
 
     toBeAdded = []
     for key in allDps:
-        response = s3_client.get_object(
-            Bucket=bucket,
-            Key=key,
-        )
+        response = s3_client.get_object(Bucket=bucket, Key=key,)
         dp = json.load(response["Body"])
 
         deleted = dp.get("bcodmo:", {}).get("deleted", False)
         if not deleted:
             state = dp.get("bcodmo:", {}).get("state", "")
-            objectId = key.strip("/datapackage.json")
+            objectId = key[: -1 * len("/datapackage.json")]
             updatedStr = dp.get("updated", "")
             if not updatedStr:
                 raise Exception("UPDATED NOT FOUND", key)
@@ -65,11 +60,7 @@ def put_dps(
                 + str(fnv1a_32(bytes(objectId, encoding="utf-8")))
             )
             toBeAdded.append(
-                {
-                    "objectId": objectId,
-                    "updated": updated,
-                    "state": state,
-                }
+                {"objectId": objectId, "updated": updated, "state": state,}
             )
 
     ddb = boto3.client("dynamodb", endpoint_url=ddb_endpoint)
@@ -79,25 +70,15 @@ def put_dps(
         response = ddb.put_item(
             TableName=ddb_table,
             Item={
-                "ObjectType": {
-                    "S": t,
-                },
-                "Updated": {
-                    "N": str(obj["updated"]),
-                },
-                "ObjectState": {
-                    "S": obj["state"],
-                },
-                "ObjectId": {
-                    "S": obj["objectId"],
-                },
+                "ObjectType": {"S": t,},
+                "Updated": {"N": str(obj["updated"]),},
+                "ObjectState": {"S": obj["state"],},
+                "ObjectId": {"S": obj["objectId"],},
             },
         )
     print("Scanning...")
 
-    response = ddb.scan(
-        TableName=ddb_table,
-    )
+    response = ddb.scan(TableName=ddb_table,)
     for item in response["Items"]:
         print(item)
 
