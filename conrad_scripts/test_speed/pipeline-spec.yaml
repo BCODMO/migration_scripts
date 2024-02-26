@@ -1,0 +1,31 @@
+750091_levin_v1_20191002_macrofaunacomm:
+  title: 750091_levin_v1_20191002_macrofaunacomm
+  description: https://kato.bco-dmo.org/issues/3239
+  version: v1.0.10
+  pipeline:
+    - run: bcodmo_pipeline_processors.load
+      cache: false
+      parameters:
+        format: xlsx
+        from: /home/conrad/Projects/whoi/laminar/scripts/test_speed/test.xlsx
+        headers: 9
+        infer_strategy: strings
+        cast_strategy: strings
+        remove_empty_rows: true
+        skip_rows:
+          - 1-8
+        override_schema:
+          missingValues:
+            - ''
+            - nd
+            - None
+        input_separator: ','
+        sheet: 1
+        preserve_formatting: true
+        adjust_floating_point_error: true
+        name: macrofauna_community
+        limit_rows: ''
+    - run: dump_to_path
+      parameters:
+        out-path: /home/conrad/Projects/whoi/laminar/scripts/test_speed/results
+        temporal_format_property: outputFormat
