@@ -1,0 +1,288 @@
+BEFORE 1707317893118036581 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 1707317893118036581 None
+____________________________
+BEFORE 1760954126866375175 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 1760954126866375175 None
+____________________________
+BEFORE 1872464507119236252 {'methods_references': '<p>methods refernecs<br></p>', 'related_datasets': '<p>reltaed aataests<br></p>', 'results_publications': '<p>results publicaitons<br></p>'}
+AFTER 1872464507119236252 {'methods_references': [{'_migrated': True, '_found_citation': '', 'identifier': '', 'identifier_type': 'none', 'description': '<p>methods refernecs<br></p>'}], 'related_datasets': [{'_migrated': True, '_found_citation': '', 'identifier': '', 'identifier_type': 'none', 'description': '<p>reltaed aataests<br></p>'}], 'results_publications': [{'_migrated': True, '_found_citation': '', 'identifier': '', 'identifier_type': 'none', 'description': '<p>results publicaitons<br></p>'}]}
+____________________________
+BEFORE 1873958445620105399 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 1873958445620105399 None
+____________________________
+BEFORE 1875454727041642905 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 1875454727041642905 None
+____________________________
+BEFORE 1915170906017245109 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 1915170906017245109 None
+____________________________
+BEFORE 1923022428955092661 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 1923022428955092661 None
+____________________________
+BEFORE 1926883852465186262 {'methods_references': '<p>methods refernecs<br></p>', 'related_datasets': '<p>reltaed aataests<br></p>', 'results_publications': '<p>results publicaitons<br></p>'}
+AFTER 1926883852465186262 {'methods_references': [{'_migrated': True, '_found_citation': '', 'identifier': '', 'identifier_type': 'none', 'description': '<p>methods refernecs<br></p>'}], 'related_datasets': [{'_migrated': True, '_found_citation': '', 'identifier': '', 'identifier_type': 'none', 'description': '<p>reltaed aataests<br></p>'}], 'results_publications': [{'_migrated': True, '_found_citation': '', 'identifier': '', 'identifier_type': 'none', 'description': '<p>results publicaitons<br></p>'}]}
+____________________________
+BEFORE 2199598973099667200 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 2199598973099667200 None
+____________________________
+BEFORE 2385756934684590589 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 2385756934684590589 None
+____________________________
+BEFORE 2437633229879593535 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 2437633229879593535 None
+____________________________
+BEFORE 2528587318820551773 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 2528587318820551773 None
+____________________________
+BEFORE 2706824291392517438 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 2706824291392517438 None
+____________________________
+BEFORE 2762834429449297555 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 2762834429449297555 None
+____________________________
+BEFORE 290573261246766708 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 290573261246766708 None
+____________________________
+BEFORE 2943876170662521620 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 2943876170662521620 None
+____________________________
+BEFORE 2974439975182805034 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 2974439975182805034 None
+____________________________
+100... Processed
+200... Processed
+300... Processed
+400... Processed
+BEFORE 2RBMrWg1xA4InRO {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 2RBMrWg1xA4InRO None
+____________________________
+500... Processed
+BEFORE 2RZOk9vYAWrI6K4W {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 2RZOk9vYAWrI6K4W None
+____________________________
+BEFORE 316510910804573374 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 316510910804573374 None
+____________________________
+BEFORE 3229531634977758430 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 3229531634977758430 None
+____________________________
+BEFORE 3284346969162039102 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 3284346969162039102 None
+____________________________
+BEFORE 334135513244961536 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 334135513244961536 None
+____________________________
+BEFORE 3548712995265160528 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 3548712995265160528 None
+____________________________
+BEFORE 360060718335626678 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 360060718335626678 None
+____________________________
+BEFORE 3687375752988725740 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 3687375752988725740 None
+____________________________
+BEFORE 3965392654136435517 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 3965392654136435517 None
+____________________________
+BEFORE 3974712223960249756 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 3974712223960249756 None
+____________________________
+BEFORE 3lD0j1zGgoDim04P {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 3lD0j1zGgoDim04P None
+____________________________
+BEFORE 4092641932955968251 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 4092641932955968251 None
+____________________________
+BEFORE 4183636259408362844 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 4183636259408362844 None
+____________________________
+BEFORE 4437714024566178437 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 4437714024566178437 None
+____________________________
+BEFORE 457100845773013605 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 457100845773013605 None
+____________________________
+BEFORE 4643078198642453077 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 4643078198642453077 None
+____________________________
+BEFORE 4716823503483088973 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 4716823503483088973 None
+____________________________
+BEFORE 4747013308905112664 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 4747013308905112664 None
+____________________________
+BEFORE 50467697560634868 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 50467697560634868 None
+____________________________
+BEFORE 541548001121934376 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 541548001121934376 None
+____________________________
+BEFORE 5488197235825996407 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 5488197235825996407 None
+____________________________
+BEFORE 5622228918322422919 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 5622228918322422919 None
+____________________________
+600... Processed
+BEFORE 5758350645332154860 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 5758350645332154860 None
+____________________________
+BEFORE 5766128161493861462 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 5766128161493861462 None
+____________________________
+BEFORE 58Zr6g92kKyS6xXV {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 58Zr6g92kKyS6xXV None
+____________________________
+BEFORE 6137589553463394126 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 6137589553463394126 None
+____________________________
+BEFORE 6156548453676290207 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 6156548453676290207 None
+____________________________
+BEFORE 6277059956725037670 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 6277059956725037670 None
+____________________________
+BEFORE 6334052666024329315 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 6334052666024329315 None
+____________________________
+BEFORE 6444768271487691011 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 6444768271487691011 None
+____________________________
+BEFORE 6483226266928856041 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 6483226266928856041 None
+____________________________
+BEFORE 6547434977181709377 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 6547434977181709377 None
+____________________________
+BEFORE 6605903638288083390 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 6605903638288083390 None
+____________________________
+BEFORE 661GWGrqB3rFVo3K {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 661GWGrqB3rFVo3K None
+____________________________
+BEFORE 6865495928827647676 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 6865495928827647676 None
+____________________________
+700... Processed
+BEFORE 7045788608687365643 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 7045788608687365643 None
+____________________________
+BEFORE 720951359003227165 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 720951359003227165 None
+____________________________
+BEFORE 7221456226720752567 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 7221456226720752567 None
+____________________________
+BEFORE 7471891152233151430 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 7471891152233151430 None
+____________________________
+BEFORE 7520511399661846159 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 7520511399661846159 None
+____________________________
+BEFORE 7676225342295107780 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 7676225342295107780 None
+____________________________
+BEFORE 7714747885167055094 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 7714747885167055094 None
+____________________________
+BEFORE 7944871926355009416 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 7944871926355009416 None
+____________________________
+BEFORE 8115560058306454451 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 8115560058306454451 None
+____________________________
+BEFORE 8203748914137611329 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 8203748914137611329 None
+____________________________
+BEFORE 8207873127906691496 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 8207873127906691496 None
+____________________________
+BEFORE 8324089587549056971 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 8324089587549056971 None
+____________________________
+BEFORE 8381104156802010480 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 8381104156802010480 None
+____________________________
+BEFORE 8qLX6XRAXvLh6DV7 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 8qLX6XRAXvLh6DV7 None
+____________________________
+BEFORE 8qZxk0pp0qYfYQg3 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 8qZxk0pp0qYfYQg3 None
+____________________________
+BEFORE 957522937585135230 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER 957522937585135230 None
+____________________________
+BEFORE An5KgjxOk6MhVZJX {'methods_references': '<p>adgadgadg<br></p>', 'related_datasets': '<p>123134<br></p>', 'results_publications': '<p>gagadgadg<br></p>'}
+AFTER An5KgjxOk6MhVZJX {'methods_references': [{'_migrated': True, '_found_citation': '', 'identifier': '', 'identifier_type': 'none', 'description': '<p>adgadgadg<br></p>'}], 'related_datasets': [{'_migrated': True, '_found_citation': '', 'identifier': '', 'identifier_type': 'none', 'description': '<p>123134<br></p>'}], 'results_publications': [{'_migrated': True, '_found_citation': '', 'identifier': '', 'identifier_type': 'none', 'description': '<p>gagadgadg<br></p>'}]}
+____________________________
+800... Processed
+BEFORE ElkZRXmgW25H001B {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER ElkZRXmgW25H001B None
+____________________________
+BEFORE ElkZRykyzwMu6Y21 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER ElkZRykyzwMu6Y21 None
+____________________________
+900... Processed
+1000... Processed
+BEFORE JZMMyrMMwEYS1JOJ {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER JZMMyrMMwEYS1JOJ None
+____________________________
+BEFORE Lgr2LlrDxlvtmypA {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER Lgr2LlrDxlvtmypA None
+____________________________
+BEFORE LgrYQy5Ev8ZsVY5L {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER LgrYQy5Ev8ZsVY5L None
+____________________________
+BEFORE Nxw2NQJBZRNhJJk6 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER Nxw2NQJBZRNhJJk6 None
+____________________________
+BEFORE Q1E4p0lDDW3cXKOD {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER Q1E4p0lDDW3cXKOD None
+____________________________
+BEFORE Q1z7m8gpDXZh3YEO {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER Q1z7m8gpDXZh3YEO None
+____________________________
+BEFORE RgN5J71llKXugNz5 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER RgN5J71llKXugNz5 None
+____________________________
+1100... Processed
+BEFORE WnJBMX747njtW9X {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER WnJBMX747njtW9X None
+____________________________
+BEFORE X6K03DV88XwhBL8G {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER X6K03DV88XwhBL8G None
+____________________________
+BEFORE g54g8Ok8YQVIYL8o {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER g54g8Ok8YQVIYL8o None
+____________________________
+BEFORE k541GXV6D3DtXEDN {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER k541GXV6D3DtXEDN None
+____________________________
+BEFORE k5vGMYDVK6ourmG4 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER k5vGMYDVK6ourmG4 None
+____________________________
+BEFORE mwxAV0QLkEzhkVPX {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER mwxAV0QLkEzhkVPX None
+____________________________
+BEFORE oYzyK02w55Of8DwM {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER oYzyK02w55Of8DwM None
+____________________________
+BEFORE qjvxqLz813EuOxPv {'methods_references': '<p>adgadgadg<br></p>', 'related_datasets': '<p>123134<br></p>', 'results_publications': '<p>gagadgadg<br></p>'}
+AFTER qjvxqLz813EuOxPv {'methods_references': [{'_migrated': True, '_found_citation': '', 'identifier': '', 'identifier_type': 'none', 'description': '<p>adgadgadg<br></p>'}], 'related_datasets': [{'_migrated': True, '_found_citation': '', 'identifier': '', 'identifier_type': 'none', 'description': '<p>123134<br></p>'}], 'results_publications': [{'_migrated': True, '_found_citation': '', 'identifier': '', 'identifier_type': 'none', 'description': '<p>gagadgadg<br></p>'}]}
+____________________________
+1200... Processed
+BEFORE vg0Z5JzYzYrT1qP {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER vg0Z5JzYzYrT1qP None
+____________________________
+BEFORE vg4wByAkMOqsLYWp {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER vg4wByAkMOqsLYWp None
+____________________________
+BEFORE wj4nmmDz3ZjTPJW9 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER wj4nmmDz3ZjTPJW9 None
+____________________________
+BEFORE y8g51xLrMBPtyJv4 {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER y8g51xLrMBPtyJv4 None
+____________________________
+BEFORE zmDDnmLPW0miGyyW {'methods_references': '', 'related_datasets': '', 'results_publications': ''}
+AFTER zmDDnmLPW0miGyyW None
+____________________________
