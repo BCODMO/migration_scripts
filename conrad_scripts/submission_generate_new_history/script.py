@@ -17,8 +17,8 @@ DDB_ENDPOINT = "https://dynamodb.us-east-1.amazonaws.com"
 # BUCKET = "bcodmo-projects-staging"
 # DDB_TABLE = "submission-object-history-staging"
 
-BUCKET = "bcodmo-submissions"
-# BUCKET = "bcodmo-projects"
+# BUCKET = "bcodmo-submissions"
+BUCKET = "bcodmo-projects"
 DDB_TABLE = "submission-object-history-prod"
 
 s3 = boto3.resource("s3")
@@ -99,26 +99,6 @@ while len(res["Contents"]):
                             "VersionIdBefore": previous_version_id,
                         },
                     )
-                    """
-                        Item={
-                            "ObjectId": {
-                                "S": oid,
-                            },
-                            "Updated": {
-                                "N": str(updated_seconds),
-                            },
-                            "Orcid": {
-                                "S": "unknown",
-                            },
-                            "VersionIdAfter": {
-                                "S": version_id,
-                            },
-                            "VersionIdBefore": {
-                                "S": previous_version_id,
-                            },
-                        },
-                    )
-                    """
                     previous_version_id = version_id
 
             print(oid, len(versions))
