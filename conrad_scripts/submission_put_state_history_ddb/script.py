@@ -1,30 +1,56 @@
 import boto3
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import re
 import json
 from datetime import datetime
 from typing import List, Dict, Optional, Tuple
+from boto3.dynamodb.conditions import Key, Attr
 from decimal import Decimal
 from dateutil.tz import tzutc
 import pytz
 
 DDB_ENDPOINT = "https://dynamodb.us-east-1.amazonaws.com"
-BUCKET = "bcodmo-submissions-staging"
+BUCKET = "bcodmo-submissions"
 OBJECT_TYPE = "submission"
-DDB_TABLE = "submission-state-history-staging"
+DDB_STATE_TABLE = "submission-state-history-prod"
+DDB_HISTORY_TABLE = "submission-object-history-prod"
 ddb = boto3.client("dynamodb", endpoint_url=DDB_ENDPOINT)
-ddb_table = boto3.resource("dynamodb").Table(DDB_TABLE)
+ddb_table = boto3.resource("dynamodb").Table(DDB_STATE_TABLE)
+ddb_history_table = boto3.resource("dynamodb").Table(DDB_HISTORY_TABLE)
 s3 = boto3.resource("s3")
 bucket = s3.Bucket(BUCKET)
 s3_client = boto3.client("s3")
 
 
+def get_version_id_to_orcid_dict(object_id):
+    paginator = ddb.get_paginator("query")
+    response_iterator = paginator.paginate(
+        TableName=DDB_HISTORY_TABLE,
+        KeyConditionExpression="ObjectId = :oid",
+        ExpressionAttributeValues={":oid": {"S": object_id}},
+    )
+    results = {}
+    for page in response_iterator:
+        for r in page["Items"]:
+            results[r["VersionIdAfter"]["S"]] = r["Orcid"]["S"]
+
+    return results
+
+
+def worker(object_key, version_id):
+    response = s3_client.get_object(Bucket=BUCKET, Key=object_key, VersionId=version_id)
+    content = json.loads(response["Body"].read().decode("utf-8"))
+
+    current_value = content.get("bcodmo:", {}).get("state", "")
+    return current_value
+
+
 def get_s3_object_version_changes(
-    bucket_name: str,
+    object_id: str,
     object_key: str,
     start_date: datetime,
     end_date: datetime,
 ) -> List[Dict[str, any]]:
-
     versions = []
     paginator = s3_client.get_paginator("list_object_versions")
 
@@ -61,18 +87,44 @@ def get_s3_object_version_changes(
     # Sort by date (oldest first) for processing
     filtered_versions.sort(key=lambda x: x["LastModified"])
 
+    print(
+        f"Found {len(filtered_versions)} versions for object {object_id}, now downloading datapackages."
+    )
+
+    counter = 0
+    total = len(filtered_versions)
+
+    results = []
+    with ThreadPoolExecutor() as executor:
+        futures = {
+            executor.submit(worker, object_key, version["VersionId"]): i
+            for i, version in enumerate(filtered_versions)
+        }
+        results = [None] * len(filtered_versions)
+
+        for future in as_completed(futures):
+            counter += 1
+            if total > 50 and counter % 50 == 0 and counter != 0:
+                print(f"Downloaded {counter} of {total} datapackages...")
+            index = futures[future]
+            results[index] = future.result()
+
     # Track changes
     changes = []
     previous_value = None
 
-    for version in filtered_versions:
+    print("Finished downloading datapackages, now getting the DDB history.")
+    version_id_to_orcid = get_version_id_to_orcid_dict(object_id)
+    for version, current_value in zip(filtered_versions, results):
         try:
-            response = s3_client.get_object(
-                Bucket=bucket_name, Key=object_key, VersionId=version["VersionId"]
-            )
-            content = json.loads(response["Body"].read().decode("utf-8"))
+            counter += 1
+            version_id = version["VersionId"]
 
-            current_value = content.get("bcodmo:", {}).get("state", "")
+            orcid = (
+                version_id_to_orcid[version_id]
+                if version_id in version_id_to_orcid
+                else "unknown"
+            )
 
             # Check if value changed
             if previous_value is None:
@@ -86,7 +138,8 @@ def get_s3_object_version_changes(
                         {
                             "date": version["LastModified"].isoformat(),
                             "state": current_value,
-                            "version_id": version["VersionId"],
+                            "version_id": version_id,
+                            "orcid": orcid,
                         }
                     )
                     previous_value = current_value
@@ -96,7 +149,8 @@ def get_s3_object_version_changes(
                     {
                         "date": version["LastModified"],
                         "state": current_value,
-                        "version_id": version["VersionId"],
+                        "version_id": version_id,
+                        "orcid": orcid,
                     }
                 )
                 previous_value = current_value
@@ -110,8 +164,8 @@ def get_s3_object_version_changes(
 
 if __name__ == "__main__":
     key = "j2oMBkogGZgFGgmE/datapackage.json"
-    start = datetime(2025, 1, 1, tzinfo=pytz.UTC)
-    end = datetime(2025, 6, 3, tzinfo=pytz.UTC)
+    start = datetime(2025, 6, 1, tzinfo=pytz.UTC)
+    end = datetime(2035, 1, 1, tzinfo=pytz.UTC)
     rows_added = 0
     counter = 0
     updated = 0
@@ -129,7 +183,7 @@ if __name__ == "__main__":
                 print(f"Handling object {oid}")
                 key = f"{oid}/datapackage.json"
                 changes = get_s3_object_version_changes(
-                    bucket_name=BUCKET,
+                    object_id=oid,
                     object_key=key,
                     start_date=start,
                     end_date=end,
@@ -141,11 +195,16 @@ if __name__ == "__main__":
                 prev_updated_seconds = None
                 num_same = 0
                 with ddb_table.batch_writer() as batch:
-                    for v in reversed(changes):
+                    for v in changes:
                         rows_added += 1
-                        modified = datetime.fromisoformat(v["date"])
+                        modified = (
+                            datetime.fromisoformat(v["date"])
+                            if type(v["date"]) == str
+                            else v["date"]
+                        )
                         version_id = v["version_id"]
                         state = v["state"]
+                        orcid = v["orcid"]
 
                         seconds = (
                             modified - datetime(1970, 1, 1, tzinfo=tzutc())
@@ -172,9 +231,10 @@ if __name__ == "__main__":
                                 "Updated": Decimal(updated_seconds),
                                 "ObjectType": OBJECT_TYPE,
                                 "VersionId": version_id,
+                                "Orcid": orcid,
                             },
                         )
-                print(f"Succesfully put {len(changes)} objects into DDB")
+                print(f"Success!\n---------------\n")
 
     print(f"Total datapackages found: {updated}")
     print(f"Total rows added: {rows_added}")
