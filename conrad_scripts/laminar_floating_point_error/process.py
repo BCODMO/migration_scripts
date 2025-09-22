@@ -1192,7 +1192,7 @@ def save_results(results: List[Dict], filename: str, total_expected: int):
         "buggy_pipelines": actual_buggy,
         "errors": errors,
         "interrupted_pipelines": interrupted,
-        "all_results": results,  # Include all results for completeness
+        # "all_results": results,  # Include all results for completeness
     }
 
     # Save results

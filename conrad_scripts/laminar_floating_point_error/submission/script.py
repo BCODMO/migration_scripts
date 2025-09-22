@@ -54,6 +54,8 @@ def get_submission(submission_id):
 js = load_file()
 results = {}
 for pipeline in js["all_results"]:
+    if "status" in pipeline and pipeline["status"] == "not_buggy":
+        continue
     submission_ids = pipeline["submission_ids"]
     prefix = pipeline["original_prefix"]
     logger.info(f"Looking at prefix {prefix}")
