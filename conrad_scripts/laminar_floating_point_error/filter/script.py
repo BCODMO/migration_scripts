@@ -137,10 +137,10 @@ for pipeline in js["buggy_pipelines"]:
         or pipeline_title.startswith("731314")
         # Audrey
         or pipeline_title.startswith("959971")
-        # Not yet confirmed
         # Karen
         or pipeline_title.startswith("967862")
         or pipeline_title.startswith("964215")
+        # Not yet confirmed
         # Dana
         or pipeline_title.startswith("967934")
         or pipeline_title.startswith("967925")
