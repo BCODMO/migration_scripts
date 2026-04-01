@@ -33,62 +33,69 @@ def fetch_doi_package(url):
     return data
 
 
-def download_files(files_dict, dest_dir):
-    """Download files from presigned URLs to dest_dir.
+def download_file(url, dest_path, expected_md5=None):
+    """Download a single file from a URL to dest_path.
+    Optionally verifies MD5 checksum. Returns the actual MD5."""
+    resp = requests.get(url, stream=True)
+    resp.raise_for_status()
 
-    Handles both plain URL strings and {url, md5, size} dicts.
-    Renames datapackage_public.json -> datapackage.json.
-    Skips the original datapackage.json (private version).
-    Verifies MD5 where available.
+    md5 = hashlib.md5()
+    with open(dest_path, "wb") as f:
+        for chunk in resp.iter_content(chunk_size=8192):
+            f.write(chunk)
+            md5.update(chunk)
 
-    Returns dict mapping upload_name -> local_path.
-    """
-    downloaded = {}
+    actual_md5 = md5.hexdigest()
+    if expected_md5 and actual_md5 != expected_md5:
+        raise ValueError(
+            f"MD5 mismatch for {dest_path.name}: expected {expected_md5}, got {actual_md5}"
+        )
+    return actual_md5
+
+
+def download_datapackage(files_dict, dest_dir):
+    """Download datapackage_public.json from the API's presigned URL,
+    save it as datapackage.json. Returns (local_path, parsed_json)."""
     dest_dir = Path(dest_dir)
 
-    for filename, file_info in files_dict.items():
-        # Skip the private datapackage.json
-        if filename == "datapackage.json":
-            logger.info("Skipping %s (private version)", filename)
-            continue
+    file_info = files_dict.get("datapackage_public.json")
+    if not file_info:
+        raise ValueError("datapackage_public.json not found in API response files")
 
-        # Determine URL and optional MD5
-        if isinstance(file_info, str):
-            url = file_info
-            expected_md5 = None
-        else:
-            url = file_info["url"]
-            expected_md5 = file_info.get("md5")
+    url = file_info["url"] if isinstance(file_info, dict) else file_info
+    expected_md5 = file_info.get("md5") if isinstance(file_info, dict) else None
 
-        # Determine the upload name (rename datapackage_public.json)
-        if filename == "datapackage_public.json":
-            upload_name = "datapackage.json"
-        else:
-            upload_name = filename
+    local_path = dest_dir / "datapackage.json"
+    logger.info("Downloading datapackage_public.json -> datapackage.json")
+    actual_md5 = download_file(url, local_path, expected_md5)
+    logger.info("Downloaded datapackage.json (md5: %s)", actual_md5)
 
-        local_path = dest_dir / upload_name
-        logger.info("Downloading %s -> %s", filename, upload_name)
+    with open(local_path) as f:
+        dp = json.load(f)
 
-        resp = requests.get(url, stream=True)
-        resp.raise_for_status()
+    return local_path, dp
 
-        md5 = hashlib.md5()
-        with open(local_path, "wb") as f:
-            for chunk in resp.iter_content(chunk_size=8192):
-                f.write(chunk)
-                md5.update(chunk)
 
-        actual_md5 = md5.hexdigest()
-        if expected_md5:
-            if actual_md5 != expected_md5:
-                raise ValueError(
-                    f"MD5 mismatch for {filename}: expected {expected_md5}, got {actual_md5}"
-                )
-            logger.info("MD5 verified for %s: %s", filename, actual_md5)
-        else:
-            logger.info("Downloaded %s (md5: %s, no expected md5 to verify)", filename, actual_md5)
+def download_resource_files(resources, dest_dir):
+    """Download resource files listed in the datapackage's resources array.
 
-        downloaded[upload_name] = str(local_path)
+    Each resource has 'filename' and 'path' (a public download URL).
+    Returns dict mapping filename -> local_path.
+    """
+    dest_dir = Path(dest_dir)
+    downloaded = {}
+
+    for resource in resources:
+        filename = resource["filename"]
+        url = resource["path"]
+        local_path = dest_dir / filename
+
+        logger.info("Downloading resource: %s", filename)
+        actual_md5 = download_file(url, local_path)
+        logger.info("Downloaded %s (%s bytes, md5: %s)",
+                    filename, resource.get("size", "?"), actual_md5)
+
+        downloaded[filename] = str(local_path)
 
     return downloaded
 
@@ -214,6 +221,7 @@ def build_ia_metadata(package_data, datapackage_meta):
     metadata = {
         "mediatype": "data",
         "collection": COLLECTION,
+        "publisher": "BCO-DMO",
         # Custom BCO-DMO fields
         "bcodmo_id": package_data["Id"],
         "bcodmo_doi_type": package_data["DoiType"],
@@ -305,12 +313,24 @@ def verify_upload(identifier):
 
 def main():
     package = fetch_doi_package(DOI_URL)
+    data = package["data"]
 
     with tempfile.TemporaryDirectory() as tmp:
-        files = download_files(package["data"]["files"], tmp)
-        dp_meta = parse_datapackage_metadata(files.get("datapackage.json"))
+        # Step 1: Download the public datapackage and parse it
+        dp_path, dp_json = download_datapackage(data["files"], tmp)
 
-        data = package["data"]
+        # Step 2: Download all resource files listed in the datapackage
+        resources = dp_json.get("resources", [])
+        files = download_resource_files(resources, tmp)
+
+        # Include the datapackage.json itself in the upload
+        files["datapackage.json"] = str(dp_path)
+        logger.info("Files to upload: %s", list(files.keys()))
+
+        # Step 3: Extract rich metadata from the datapackage
+        dp_meta = parse_datapackage_metadata(str(dp_path))
+
+        # Step 4: Build IA identifier and metadata, then upload
         identifier = f"bco-dmo-{data['DoiType'].lower()}-{data['Id']}-v{data['Version']}"
         logger.info("Using identifier: %s", identifier)
 
